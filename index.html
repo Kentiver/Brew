@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Brygg·Kontroll</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fira+Code:wght@300;400;500&family=Libre+Franklin:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #0d0f0e;
+  --panel:     #141714;
+  --panel2:    #1a1d1a;
+  --border:    #252b24;
+  --border2:   #2f382e;
+  --gold:      #c8922a;
+  --gold2:     #e8b44a;
+  --amber:     #d4601a;
+  --green:     #3dba72;
+  --blue:      #4a9edd;
+  --red:       #d94040;
+  --text:      #dde5d8;
+  --muted:     #5a6b56;
+  --muted2:    #8a9e84;
+  --foam:      #c8922a18;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Libre Franklin', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle hop texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle at 20% 50%, #c8922a06 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, #3dba7206 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.logo-main {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 36px;
+  color: var(--gold2);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.logo-sep {
+  width: 4px; height: 4px;
+  background: var(--amber);
+  border-radius: 50%;
+  margin-bottom: 6px;
+}
+
+.logo-sub {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--muted2);
+}
+
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.dot.ok    { background: var(--green); box-shadow: 0 0 6px var(--green); animation: glow 2s infinite; }
+.dot.err   { background: var(--red); }
+.dot.busy  { background: var(--gold); animation: blink .7s infinite; }
+
+@keyframes glow  { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+.logout-link {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  display: none;
+}
+
+/* ── SECTION LABELS ── */
+.section-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── LOGIN ── */
+#loginPanel {
+  max-width: 440px;
+  margin: 48px auto;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+#loginPanel h2 {
+  font-family: 'Archivo Black', sans-serif;
+  color: var(--gold2);
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+#loginPanel p {
+  font-size: 12px;
+  color: var(--muted2);
+  line-height: 1.7;
+  margin-bottom: 22px;
+}
+
+.field { margin-bottom: 14px; }
+
+label {
+  display: block;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted2);
+  margin-bottom: 6px;
+}
+
+input[type=text], input[type=email], input[type=password], input[type=number] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  outline: none;
+  -webkit-appearance: none;
+  transition: border-color .2s;
+}
+input:focus { border-color: var(--gold); }
+
+.btn-primary {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, var(--gold), var(--amber));
+  border: none;
+  border-radius: 6px;
+  color: #0d0f0e;
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 15px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: opacity .2s, transform .1s;
+}
+.btn-primary:active { transform: scale(.98); }
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+
+.btn-ghost {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--muted2);
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: border-color .2s;
+}
+.btn-ghost:hover { border-color: var(--muted2); }
+
+.err-box {
+  background: #d9404015;
+  border: 1px solid #d9404040;
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 12px;
+  color: var(--red);
+  margin-top: 10px;
+  display: none;
+}
+
+/* ── DEVICE PICKER ── */
+#devicePanel { display: none; }
+
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+
+.device-card {
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 18px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.device-card:hover { border-color: var(--gold); background: var(--panel2); }
+
+.device-card .dname {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 18px;
+  color: var(--gold2);
+  margin-bottom: 3px;
+}
+
+.device-card .did {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* ── MAIN DASHBOARD ── */
+#dashboard { display: none; }
+
+/* Two-column layout: RAPT left, Inkbird right */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+/* ── PANELS ── */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.panel-title {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 14px;
+  color: var(--gold2);
+  letter-spacing: .5px;
+}
+
+.panel-badge {
+  font-family: 'Fira Code', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: var(--foam);
+  color: var(--gold);
+  border: 1px solid var(--gold)30;
+}
+
+.panel-badge.live { background: #3dba7215; color: var(--green); border-color: var(--green)30; }
+.panel-badge.manual { background: #4a9edd15; color: var(--blue); border-color: var(--blue)30; }
+
+/* ── BIG VALUE ── */
+.big-val {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.big-num {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 52px;
+  line-height: 1;
+  color: var(--text);
+  letter-spacing: -2px;
+  transition: color .4s;
+}
+
+.big-num.flash { color: var(--gold2); }
+
+.big-unit {
+  font-family: 'Fira Code', monospace;
+  font-size: 14px;
+  color: var(--muted2);
+}
+
+.val-sub {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* ── MINI METRICS ROW ── */
+.mini-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mini-card {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 10px;
+}
+
+.mini-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.mini-val {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 22px;
+  color: var(--text);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.mini-unit {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--muted2);
+}
+
+/* ── INKBIRD MANUAL INPUTS ── */
+.inkbird-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ink-field { }
+.ink-field label { margin-bottom: 5px; }
+
+.ink-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.ink-input-row input { flex: 1; }
+
+.btn-set {
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 0 12px;
+  color: var(--gold);
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .2s;
+}
+.btn-set:hover { border-color: var(--gold); }
+
+/* Mode indicator: heating/cooling/idle */
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  margin-top: 10px;
+}
+
+.mode-badge.heating { background: #d94040, 0.12; background: #d9404015; color: var(--red); border: 1px solid #d9404040; }
+.mode-badge.cooling { background: #4a9edd15; color: var(--blue); border: 1px solid #4a9edd40; }
+.mode-badge.idle    { background: #3dba7215; color: var(--green); border: 1px solid #3dba7240; }
+
+/* ── CHART ── */
+.chart-panel {
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+.chart-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.legend {
+  display: flex;
+  gap: 14px;
+}
+
+.leg-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--muted2);
+}
+
+.leg-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* ── ABV SECTION ── */
+.abv-section {
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+.abv-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.abv-item { }
+
+.abv-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.abv-num {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 30px;
+  color: var(--gold2);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.abv-u {
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--muted2);
+}
+
+.og-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.og-row label { margin: 0; font-size: 9px; white-space: nowrap; }
+.og-row input { width: 90px; padding: 7px 10px; font-size: 12px; }
+
+.progress-bar {
+  height: 5px;
+  background: var(--panel2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 14px;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--green), var(--gold2));
+  transition: width 1.2s ease;
+}
+
+/* ── BOTTOM ROW ── */
+.bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.countdown-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ring-wrap { position: relative; width: 34px; height: 34px; }
+.ring-wrap svg { transform: rotate(-90deg); }
+
+.btn-refresh {
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 8px 14px;
+  color: var(--muted2);
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.btn-refresh:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--text);
+  z-index: 999;
+  transition: transform .3s;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── TEMP DISPLAY CARD ── */
+.temp-display {
+  margin-top: 10px;
+}
+
+.temp-main-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.temp-arrow {
+  font-size: 18px;
+  margin: 0 2px;
+}
+
+.setpoint-display {
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  color: var(--muted2);
+}
+
+/* ── LAST UPDATE ── */
+.last-update {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .two-col { grid-template-columns: 1fr; }
+  .mini-row { grid-template-columns: 1fr 1fr; }
+  .abv-row  { grid-template-columns: 1fr 1fr; }
+  .big-num  { font-size: 40px; }
+  .logo-main { font-size: 28px; }
+  .inkbird-inputs { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-main">BRYGG·KONTROLL</div>
+    </div>
+    <div class="header-right">
+      <div class="status-pill">
+        <div class="dot" id="statusDot"></div>
+        <span id="statusTxt">Ikke tilkoblet</span>
+      </div>
+      <div class="last-update" id="lastUpdateTxt"></div>
+      <button class="logout-link" id="logoutBtn" onclick="logout()">Logg ut</button>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="loginPanel">
+    <h2>Koble til RAPT</h2>
+    <p>Logg inn med RAPT-konto og API Secret. Opprett under <strong>My Account → Api Secrets</strong> på rapt.io.</p>
+    <div class="field">
+      <label>E-post</label>
+      <input type="email" id="inUser" placeholder="din@epost.no" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>API Secret</label>
+      <input type="password" id="inKey" placeholder="Fra RAPT → Api Secrets" autocomplete="off">
+    </div>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">KOBLE TIL</button>
+    <div class="err-box" id="loginErr"></div>
+    <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border); font-family:'Fira Code',monospace; font-size:10px; color:var(--muted); line-height:1.8">
+      💡 API Secret opprettes på <a href="https://rapt.io" target="_blank" style="color:var(--gold)">rapt.io</a><br>
+      Innlogging lagres lokalt i nettleseren din.
+    </div>
+  </div>
+
+  <!-- DEVICE PICKER -->
+  <div id="devicePanel">
+    <div class="section-label">Velg hydrometer</div>
+    <div class="device-grid" id="deviceGrid"></div>
+    <button class="btn-ghost" onclick="logout()">← Tilbake</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+
+    <!-- TOP: RAPT + Inkbird side by side -->
+    <div class="two-col">
+
+      <!-- RAPT PANEL -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title" id="raptDevName">RAPT PILL</div>
+            <div class="mini-label" style="margin-top:3px">Hydrometer</div>
+          </div>
+          <div class="panel-badge live">● LIVE</div>
+        </div>
+
+        <div class="section-label">Spesifikk tyngdekraft</div>
+        <div class="big-val">
+          <div class="big-num" id="sgVal">–</div>
+        </div>
+        <div class="val-sub" id="sgTrend">–</div>
+
+        <div class="mini-row">
+          <div class="mini-card">
+            <div class="mini-label">Temp</div>
+            <div class="mini-val" id="raptTemp">–</div>
+            <div class="mini-unit">°C</div>
+          </div>
+          <div class="mini-card">
+            <div class="mini-label">Grav. vel.</div>
+            <div class="mini-val" id="gravVel" style="font-size:16px">–</div>
+            <div class="mini-unit">/dag</div>
+          </div>
+          <div class="mini-card">
+            <div class="mini-label">Batteri</div>
+            <div class="mini-val" id="battVal">–</div>
+            <div class="mini-unit" id="battUnit"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- INKBIRD PANEL -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">INKBIRD ITC-308</div>
+            <div class="mini-label" style="margin-top:3px">Fermenteringskammer</div>
+          </div>
+          <div class="panel-badge manual">MANUELL</div>
+        </div>
+
+        <div class="section-label">Temperatur</div>
+        <div class="temp-display">
+          <div class="temp-main-row">
+            <div class="big-val">
+              <div class="big-num" id="inkActual">–</div>
+              <div class="big-unit">°C</div>
+            </div>
+            <div class="setpoint-display">
+              → mål: <span id="inkSetTxt" style="color:var(--gold2)">–</span> °C
+            </div>
+          </div>
+          <div id="modeBadge" class="mode-badge idle" style="display:none"></div>
+        </div>
+
+        <div class="inkbird-inputs">
+          <div class="ink-field">
+            <label>Faktisk temp (°C)</label>
+            <div class="ink-input-row">
+              <input type="number" id="inkActIn" placeholder="18.5" step="0.1">
+              <button class="btn-set" onclick="setInkbird()">SET</button>
+            </div>
+          </div>
+          <div class="ink-field">
+            <label>Setpunkt (°C)</label>
+            <div class="ink-input-row">
+              <input type="number" id="inkSetIn" placeholder="20.0" step="0.1">
+              <button class="btn-set" onclick="setInkbird()">SET</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="mini-row" style="grid-template-columns:1fr 1fr">
+            <div class="mini-card">
+              <div class="mini-label">Avvik</div>
+              <div class="mini-val" id="inkDiff" style="font-size:20px">–</div>
+              <div class="mini-unit">°C</div>
+            </div>
+            <div class="mini-card">
+              <div class="mini-label">Status</div>
+              <div style="font-family:'Fira Code',monospace; font-size:12px; margin-top:6px; color:var(--muted2)" id="inkStatus">Ikke satt</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ABV / Brewing calc -->
+    <div class="abv-section">
+      <div class="panel-header" style="margin-bottom:12px">
+        <div class="section-label" style="margin:0">Bryggekalkulator</div>
+        <div class="og-row">
+          <label>OG:</label>
+          <input type="number" id="ogIn" placeholder="1.060" step="0.001" min="1.000" max="1.200">
+          <button class="btn-set" onclick="saveOG()">SET</button>
+        </div>
+      </div>
+      <div class="abv-row" id="abvRow">
+        <div class="abv-item">
+          <div class="abv-label">Estimert ABV</div>
+          <div><span class="abv-num" id="abvNum">–</span><span class="abv-u"> %</span></div>
+        </div>
+        <div class="abv-item">
+          <div class="abv-label">OG (Start SG)</div>
+          <div><span class="abv-num" id="ogDisp" style="font-size:22px; color:var(--muted2)">–</span></div>
+        </div>
+        <div class="abv-item">
+          <div class="abv-label">FG (Nå)</div>
+          <div><span class="abv-num" id="fgDisp" style="font-size:22px; color:var(--muted2)">–</span></div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="abvBar" style="width:0%"></div></div>
+      <div style="display:flex; justify-content:space-between; margin-top:5px; font-family:'Fira Code',monospace; font-size:9px; color:var(--muted)">
+        <span>0 %</span>
+        <span id="abvTarget">–</span>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-panel">
+      <div class="chart-hdr">
+        <div class="section-label" style="margin:0; flex:none">Historikk 24t</div>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:var(--gold2)"></div>SG</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--blue); opacity:.7"></div>Temp RAPT</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--green); opacity:.7"></div>Temp Inkbird</div>
+        </div>
+      </div>
+      <canvas id="chart" height="190"></canvas>
+    </div>
+
+    <!-- BOTTOM -->
+    <div class="bottom-row">
+      <div class="countdown-wrap">
+        <div class="ring-wrap">
+          <svg viewBox="0 0 34 34" width="34" height="34">
+            <circle cx="17" cy="17" r="14" fill="none" stroke="var(--border2)" stroke-width="2.5"/>
+            <circle id="ringProg" cx="17" cy="17" r="14" fill="none"
+              stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round"
+              stroke-dasharray="87.96" stroke-dashoffset="87.96"
+              style="transition: stroke-dashoffset 1s linear"/>
+          </svg>
+        </div>
+        <span style="font-family:'Fira Code',monospace; font-size:10px; color:var(--muted)" id="cntTxt">–</span>
+      </div>
+      <button class="btn-refresh" onclick="fetchRAPT()">↻ OPPDATER NÅ</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────
+const INTERVAL   = 10 * 60 * 1000;  // 10 min
+const TOKEN_TTL  = 50 * 60 * 1000;  // refresh token every 50 min
+const CIRC       = 87.96;
+
+// ─── STATE ────────────────────────────────────────────────
+const S = {
+  token: null, username: null, apiKey: null,
+  device: null, devices: [],
+  history: [],
+  og: null,
+  inkActual: null, inkSet: null,
+  inkHistory: [],        // {time, actual, set}
+  countdown: INTERVAL / 1000,
+  timers: {},
+};
+
+// ─── INIT ─────────────────────────────────────────────────
+(function init() {
+  try {
+    const c = JSON.parse(localStorage.getItem('bc_creds') || '{}');
+    if (c.username) document.getElementById('inUser').value = c.username;
+    if (c.apiKey)   document.getElementById('inKey').value  = c.apiKey;
+    const d = JSON.parse(localStorage.getItem('bc_device') || 'null');
+    if (d) S.device = d;
+    S.og = parseFloat(localStorage.getItem('bc_og')) || null;
+    if (S.og) document.getElementById('ogIn').value = S.og;
+    const ink = JSON.parse(localStorage.getItem('bc_ink') || 'null');
+    if (ink) { S.inkActual = ink.a; S.inkSet = ink.s; }
+    // Try auto-login if we have credentials
+    if (c.username && c.apiKey && S.device) {
+      autoReconnect(c.username, c.apiKey);
+    }
+  } catch(e) {}
+})();
+
+async function autoReconnect(u, k) {
+  setStatus('busy', 'Kobler til…');
+  try {
+    S.token = await getToken(u, k);
+    S.username = u; S.apiKey = k;
+    showDashboard();
+    await fetchRAPT();
+    startTimers();
+    document.getElementById('logoutBtn').style.display = 'block';
+  } catch(e) {
+    setStatus('err', 'Feil – logg inn på nytt');
+  }
+}
+
+// ─── AUTH ─────────────────────────────────────────────────
+async function getToken(u, k) {
+  const r = await fetch('https://id.rapt.io/connect/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id:'rapt-user', grant_type:'password', username:u, password:k })
+  });
+  if (!r.ok) throw new Error('Autentisering feilet');
+  return (await r.json()).access_token;
+}
+
+async function doLogin() {
+  const u = document.getElementById('inUser').value.trim();
+  const k = document.getElementById('inKey').value.trim();
+  const errEl = document.getElementById('loginErr');
+  errEl.style.display = 'none';
+  if (!u || !k) { showErr(errEl, 'Fyll inn e-post og API Secret.'); return; }
+  setBtnLoading(true);
+  setStatus('busy', 'Kobler til…');
+  try {
+    S.token = await getToken(u, k);
+    S.username = u; S.apiKey = k;
+    localStorage.setItem('bc_creds', JSON.stringify({ username:u, apiKey:k }));
+    const devs = await fetchDevices();
+    S.devices = devs;
+    if (!devs.length) { showErr(errEl, 'Ingen hydrometere funnet.'); setBtnLoading(false); return; }
+    if (devs.length === 1) {
+      S.device = devs[0];
+      localStorage.setItem('bc_device', JSON.stringify(S.device));
+      showDashboard();
+      await fetchRAPT();
+      startTimers();
+    } else {
+      showDevicePicker(devs);
+    }
+    document.getElementById('logoutBtn').style.display = 'block';
+  } catch(e) {
+    showErr(errEl, e.message);
+    setStatus('err', 'Feil');
+  } finally { setBtnLoading(false); }
+}
+
+async function fetchDevices() {
+  const r = await fetch('https://api.rapt.io/api/Hydrometers/GetHydrometers', {
+    headers: { Authorization: `Bearer ${S.token}` }
+  });
+  if (!r.ok) throw new Error('Kunne ikke hente enheter');
+  return r.json();
+}
+
+function showDevicePicker(devs) {
+  document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('devicePanel').style.display = 'block';
+  document.getElementById('deviceGrid').innerHTML = devs.map((d, i) => `
+    <div class="device-card" onclick="pickDevice(${i})">
+      <div class="dname">${d.name || 'Hydrometer '+(i+1)}</div>
+      <div class="did">${d.id || ''}</div>
+    </div>`).join('');
+}
+
+async function pickDevice(i) {
+  S.device = S.devices[i];
+  localStorage.setItem('bc_device', JSON.stringify(S.device));
+  showDashboard();
+  await fetchRAPT();
+  startTimers();
+}
+
+function showDashboard() {
+  document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('devicePanel').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  if (S.device) document.getElementById('raptDevName').textContent = S.device.name || 'RAPT PILL';
+  if (S.og) { document.getElementById('ogDisp').textContent = S.og.toFixed(3); }
+  if (S.inkActual !== null) {
+    document.getElementById('inkActIn').value = S.inkActual;
+    document.getElementById('inkSetIn').value = S.inkSet || '';
+    updateInkbirdDisplay();
+  }
+}
+
+function logout() {
+  Object.values(S.timers).forEach(clearInterval);
+  S.token = null; S.device = null;
+  document.getElementById('loginPanel').style.display = 'block';
+  document.getElementById('devicePanel').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('logoutBtn').style.display = 'none';
+  localStorage.removeItem('bc_device');
+  setStatus('', 'Ikke tilkoblet');
+}
+
+// ─── RAPT FETCH ───────────────────────────────────────────
+async function fetchRAPT() {
+  if (!S.token || !S.device) return;
+  setStatus('busy', 'Henter…');
+  try {
+    const end   = new Date();
+    const start = new Date(end - 24*60*60*1000);
+    const url = `https://api.rapt.io/api/Hydrometers/GetTelemetry?hydrometerId=${S.device.id}&startDate=${start.toISOString()}&endDate=${end.toISOString()}`;
+    const r = await fetch(url, { headers:{ Authorization:`Bearer ${S.token}` }});
+    if (r.status === 401) { await refreshToken(); return fetchRAPT(); }
+    if (!r.ok) throw new Error('Telemetri-feil');
+    const data = await r.json();
+    S.history = (Array.isArray(data) ? data : (data.telemetry||[])).sort(
+      (a,b) => new Date(a.timestamp||a.createdOn) - new Date(b.timestamp||b.createdOn));
+    updateRAPT();
+    setStatus('ok', 'Tilkoblet');
+    const t = new Date();
+    document.getElementById('lastUpdateTxt').textContent =
+      'Oppdatert ' + t.toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'});
+    showToast('✓ RAPT oppdatert');
+  } catch(e) {
+    setStatus('err', 'Feil'); console.error(e);
+  }
+}
+
+async function refreshToken() {
+  try { S.token = await getToken(S.username, S.apiKey); } catch(e) {}
+}
+
+function updateRAPT() {
+  if (!S.history.length) return;
+  const sorted = S.history;
+  const last   = sorted[sorted.length - 1];
+  const prev   = sorted.length > 1 ? sorted[sorted.length - 2] : last;
+
+  const sg   = parseFloat(last.gravity || last.specificGravity || 0);
+  const sgPr = parseFloat(prev.gravity || prev.specificGravity || 0);
+  const temp = parseFloat(last.temperature || last.temperatureCelsius || 0);
+  const vel  = parseFloat(last.gravityVelocity || 0);
+  const batt = parseFloat(last.battery || last.batteryVoltage || 0);
+
+  // SG
+  flashNum('sgVal', sg.toFixed(3));
+  const diff = sg - sgPr;
+  const diffStr = diff === 0 ? '→ stabil'
+    : diff > 0 ? `↑ +${Math.abs(diff).toFixed(4)}` : `↓ ${diff.toFixed(4)}`;
+  document.getElementById('sgTrend').textContent = diffStr;
+
+  // Temp RAPT
+  document.getElementById('raptTemp').textContent = temp.toFixed(1);
+
+  // Velocity
+  document.getElementById('gravVel').textContent = vel.toFixed(4);
+
+  // Battery
+  const battPct = batt > 1
+    ? Math.min(100, Math.max(0, Math.round(((batt-3.0)/(4.2-3.0))*100)))
+    : Math.round(batt*100);
+  document.getElementById('battVal').textContent = battPct;
+  document.getElementById('battUnit').textContent = batt > 1 ? `% (${batt.toFixed(2)}V)` : '%';
+
+  // ABV
+  if (S.og && sg > 0) {
+    const abv = (S.og - sg) * 131.25;
+    const maxAbv = (S.og - 1.000) * 131.25;
+    document.getElementById('abvNum').textContent  = abv.toFixed(1);
+    document.getElementById('ogDisp').textContent  = S.og.toFixed(3);
+    document.getElementById('fgDisp').textContent  = sg.toFixed(3);
+    document.getElementById('abvTarget').textContent = `maks ~${maxAbv.toFixed(1)} %`;
+    document.getElementById('abvBar').style.width  = Math.min(100, (abv/Math.max(maxAbv,.1))*100) + '%';
+  }
+
+  drawChart();
+}
+
+// ─── INKBIRD ──────────────────────────────────────────────
+function setInkbird() {
+  const a = parseFloat(document.getElementById('inkActIn').value);
+  const s = parseFloat(document.getElementById('inkSetIn').value);
+  if (isNaN(a)) { showToast('Tast inn faktisk temperatur'); return; }
+  S.inkActual = a;
+  S.inkSet    = isNaN(s) ? null : s;
+  localStorage.setItem('bc_ink', JSON.stringify({ a: S.inkActual, s: S.inkSet }));
+
+  // Log to inkbird history
+  S.inkHistory.push({ time: new Date(), actual: a, set: S.inkSet });
+  // Keep max 200 entries
+  if (S.inkHistory.length > 200) S.inkHistory.shift();
+
+  updateInkbirdDisplay();
+  drawChart();
+  showToast('✓ Inkbird oppdatert');
+}
+
+function updateInkbirdDisplay() {
+  if (S.inkActual === null) return;
+  document.getElementById('inkActual').textContent = S.inkActual.toFixed(1);
+  document.getElementById('inkSetTxt').textContent = S.inkSet !== null ? S.inkSet.toFixed(1) : '–';
+
+  const badge = document.getElementById('modeBadge');
+  badge.style.display = 'inline-flex';
+
+  if (S.inkSet !== null) {
+    const diff = S.inkActual - S.inkSet;
+    document.getElementById('inkDiff').textContent = (diff >= 0 ? '+' : '') + diff.toFixed(1);
+    if (Math.abs(diff) < 0.3) {
+      badge.className = 'mode-badge idle';
+      badge.textContent = '● PÅ TEMPERATUR';
+      document.getElementById('inkStatus').textContent = 'På temperatur';
+    } else if (diff > 0) {
+      badge.className = 'mode-badge cooling';
+      badge.textContent = '❄ KJØLING';
+      document.getElementById('inkStatus').textContent = 'Kjøler ned';
+    } else {
+      badge.className = 'mode-badge heating';
+      badge.textContent = '🔥 VARMING';
+      document.getElementById('inkStatus').textContent = 'Varmer opp';
+    }
+  } else {
+    document.getElementById('inkDiff').textContent = '–';
+    document.getElementById('inkStatus').textContent = 'Setpunkt ikke satt';
+    badge.style.display = 'none';
+  }
+}
+
+// ─── OG ───────────────────────────────────────────────────
+function saveOG() {
+  const v = parseFloat(document.getElementById('ogIn').value);
+  if (isNaN(v) || v < 1 || v > 1.2) { showToast('Ugyldig OG (1.000 – 1.200)'); return; }
+  S.og = v;
+  localStorage.setItem('bc_og', v);
+  updateRAPT();
+  showToast('OG satt: ' + v.toFixed(3));
+}
+
+// ─── CHART ────────────────────────────────────────────────
+function drawChart() {
+  const canvas = document.getElementById('chart');
+  const ctx    = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth - 40;
+  const H = 190;
+  canvas.width = W; canvas.height = H;
+
+  const sorted = S.history;
+  if (sorted.length < 2) {
+    ctx.fillStyle = '#5a6b56';
+    ctx.font = '11px Fira Code';
+    ctx.textAlign = 'center';
+    ctx.fillText('Ikke nok RAPT-data ennå', W/2, H/2);
+    return;
+  }
+
+  const pad = { l: 54, r: 46, t: 8, b: 28 };
+  const cW  = W - pad.l - pad.r;
+  const cH  = H - pad.t - pad.b;
+
+  const sgs   = sorted.map(d => parseFloat(d.gravity || d.specificGravity || 0));
+  const temps = sorted.map(d => parseFloat(d.temperature || d.temperatureCelsius || 0));
+  const times = sorted.map(d => new Date(d.timestamp || d.createdOn).getTime());
+
+  const sgMin = Math.min(...sgs)  - .002, sgMax = Math.max(...sgs)  + .002;
+  const tMin  = Math.min(...temps) - 1.5, tMax  = Math.max(...temps) + 1.5;
+  const sgR   = sgMax - sgMin || .01;
+  const tR    = tMax  - tMin  || 1;
+  const t0    = times[0], tEnd = times[times.length-1];
+  const tSpan = tEnd - t0 || 1;
+
+  const xP  = i => pad.l + (times[i] - t0) / tSpan * cW;
+  const sgY = v => pad.t + cH - (v - sgMin) / sgR * cH;
+  const tY  = v => pad.t + cH - (v - tMin)  / tR  * cH;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#252b24'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + cH/4*i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r, y); ctx.stroke();
+  }
+
+  // SG axis (left)
+  ctx.fillStyle = '#c8922a'; ctx.font = '9px Fira Code'; ctx.textAlign = 'right';
+  for (let i = 0; i <= 3; i++) {
+    const v = sgMax - sgR/3*i;
+    ctx.fillText(v.toFixed(3), pad.l-4, pad.t + cH/3*i + 3);
+  }
+
+  // Temp axis (right)
+  ctx.fillStyle = '#4a9edd'; ctx.textAlign = 'left';
+  for (let i = 0; i <= 3; i++) {
+    const v = tMax - tR/3*i;
+    ctx.fillText(v.toFixed(0)+'°', W-pad.r+4, pad.t + cH/3*i + 3);
+  }
+
+  // Time axis
+  ctx.fillStyle = '#5a6b56'; ctx.textAlign = 'center';
+  const lc = Math.min(5, sorted.length);
+  for (let i = 0; i < lc; i++) {
+    const idx = Math.floor((sorted.length-1)/(lc-1)*i);
+    const t = new Date(times[idx]);
+    ctx.fillText(t.toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}), xP(idx), H-6);
+  }
+
+  // Inkbird line
+  if (S.inkHistory.length > 1) {
+    ctx.beginPath();
+    ctx.strokeStyle = '#3dba7288'; ctx.lineWidth = 1.5; ctx.setLineDash([3,4]);
+    let first = true;
+    S.inkHistory.forEach(pt => {
+      const px = pad.l + (pt.time.getTime() - t0) / tSpan * cW;
+      const py = tY(pt.actual);
+      if (px >= pad.l && px <= W - pad.r) {
+        first ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        first = false;
+      }
+    });
+    ctx.stroke(); ctx.setLineDash([]);
+  } else if (S.inkActual !== null) {
+    // Single horizontal line
+    const py = tY(S.inkActual);
+    if (py >= pad.t && py <= pad.t+cH) {
+      ctx.beginPath();
+      ctx.strokeStyle = '#3dba7255'; ctx.lineWidth = 1; ctx.setLineDash([3,5]);
+      ctx.moveTo(pad.l, py); ctx.lineTo(W-pad.r, py); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#3dba72'; ctx.textAlign = 'left'; ctx.font = '8px Fira Code';
+      ctx.fillText('Inkbird', W-pad.r+4, py+3);
+    }
+  }
+
+  // RAPT temp line
+  ctx.beginPath();
+  ctx.strokeStyle = '#4a9edd88'; ctx.lineWidth = 1.8; ctx.setLineDash([4,4]);
+  sorted.forEach((d,i) => { i===0 ? ctx.moveTo(xP(i), tY(temps[i])) : ctx.lineTo(xP(i), tY(temps[i])); });
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // SG area fill
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t+cH);
+  grad.addColorStop(0, '#c8922a30'); grad.addColorStop(1, '#c8922a05');
+  ctx.beginPath();
+  sorted.forEach((d,i) => { i===0 ? ctx.moveTo(xP(i), sgY(sgs[i])) : ctx.lineTo(xP(i), sgY(sgs[i])); });
+  ctx.lineTo(xP(sorted.length-1), pad.t+cH); ctx.lineTo(xP(0), pad.t+cH); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // SG line
+  ctx.beginPath();
+  ctx.strokeStyle = '#c8922a'; ctx.lineWidth = 2.5;
+  sorted.forEach((d,i) => { i===0 ? ctx.moveTo(xP(i), sgY(sgs[i])) : ctx.lineTo(xP(i), sgY(sgs[i])); });
+  ctx.stroke();
+
+  // Latest SG dot
+  const lx = xP(sorted.length-1), ly = sgY(sgs[sgs.length-1]);
+  ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI*2);
+  ctx.fillStyle = '#c8922a'; ctx.fill();
+}
+
+// ─── TIMERS ───────────────────────────────────────────────
+function startTimers() {
+  clearInterval(S.timers.update);
+  clearInterval(S.timers.token);
+  clearInterval(S.timers.cnt);
+
+  S.countdown = INTERVAL / 1000;
+
+  S.timers.update = setInterval(async () => {
+    S.countdown = INTERVAL / 1000;
+    await fetchRAPT();
+  }, INTERVAL);
+
+  S.timers.token = setInterval(() => refreshToken(), TOKEN_TTL);
+
+  S.timers.cnt = setInterval(() => {
+    S.countdown = Math.max(0, S.countdown - 1);
+    const m = Math.floor(S.countdown / 60);
+    const s = S.countdown % 60;
+    document.getElementById('cntTxt').textContent = `Neste: ${m}:${String(s).padStart(2,'0')}`;
+    const pct = 1 - S.countdown / (INTERVAL / 1000);
+    document.getElementById('ringProg').style.strokeDashoffset = CIRC - pct * CIRC;
+    if (S.countdown === 0) S.countdown = INTERVAL / 1000;
+  }, 1000);
+}
+
+// ─── HELPERS ──────────────────────────────────────────────
+function flashNum(id, val) {
+  const el = document.getElementById(id);
+  el.textContent = val;
+  el.classList.remove('flash');
+  setTimeout(() => el.classList.add('flash'), 10);
+  setTimeout(() => el.classList.remove('flash'), 600);
+}
+
+function setStatus(type, txt) {
+  document.getElementById('statusDot').className = 'dot ' + type;
+  document.getElementById('statusTxt').textContent = txt;
+}
+
+function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+function setBtnLoading(b) {
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = b;
+  btn.textContent = b ? 'KOBLER TIL…' : 'KOBLE TIL';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
