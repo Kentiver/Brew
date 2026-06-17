@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Brew Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fira+Code:wght@300;400;500&family=Libre+Franklin:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0f0e;--panel:#141714;--panel2:#1a1d1a;--border:#252b24;--bord2:#2f382e;
+  --gold:#c8922a;--gold2:#e8b44a;--amber:#d4601a;--green:#3dba72;--blue:#4a9edd;
+  --red:#d94040;--yellow:#e8c030;--text:#dde5d8;--muted:#5a6b56;--muted2:#8a9e84;
+  --ice:#a8d8f0;--warm:#e87040;--cool:#5ab8f0;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'Libre Franklin',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(circle at 15% 60%,#c8922a07 0%,transparent 50%),radial-gradient(circle at 85% 20%,#3dba7207 0%,transparent 40%);pointer-events:none;z-index:0;}
+.app{position:relative;z-index:1;width:100%;max-width:1100px;margin:0 auto;padding:16px 12px 48px;}
+
+/* HEADER */
+.hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.logo{font-family:'Archivo Black',sans-serif;font-size:42px;color:var(--gold2);letter-spacing:-1px;line-height:1;}
+.logo span{color:var(--amber);}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+.status-pill{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--bord2);border-radius:20px;padding:6px 14px;font-family:'Fira Code',monospace;font-size:12px;color:var(--muted2);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+.dot.ok{background:var(--green);box-shadow:0 0 7px var(--green);animation:glow 2s infinite;}
+.dot.err{background:var(--red);}
+.dot.busy{background:var(--gold);animation:blink .7s infinite;}
+@keyframes glow{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes sgblink{0%,100%{opacity:1}40%,60%{opacity:.1}}
+@keyframes redblink{0%,100%{opacity:1;color:var(--red)}50%{opacity:.3;color:#ff8080}}
+@keyframes bannerPulse{0%,100%{box-shadow:0 0 0 transparent}50%{box-shadow:0 0 32px #d9404055}}
+@keyframes icePulse{0%,100%{box-shadow:0 0 0 transparent}50%{box-shadow:0 0 32px #a8d8f055}}
+@keyframes greenPulse{0%,100%{box-shadow:0 0 0 transparent}50%{box-shadow:0 0 32px #3dba7255}}
+@keyframes hopPulse{0%,100%{box-shadow:0 0 0 transparent}50%{box-shadow:0 0 32px #e8b44a55}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+.logout-btn{font-family:'Fira Code',monospace;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;display:none;}
+.upd-txt{font-family:'Fira Code',monospace;font-size:11px;color:var(--muted);}
+.slabel{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.slabel::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* LOGIN */
+#loginPanel{max-width:460px;margin:52px auto;background:var(--panel);border:1px solid var(--bord2);border-radius:14px;padding:36px;}
+#loginPanel h2{font-family:'Archivo Black',sans-serif;color:var(--gold2);font-size:26px;margin-bottom:8px;}
+#loginPanel p{font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:24px;}
+.field{margin-bottom:16px;}
+label{display:block;font-family:'Fira Code',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);margin-bottom:7px;}
+input[type=email],input[type=password],input[type=number],input[type=text]{width:100%;background:var(--bg);border:1px solid var(--bord2);border-radius:7px;padding:12px 14px;color:var(--text);font-family:'Fira Code',monospace;font-size:14px;outline:none;-webkit-appearance:none;transition:border-color .2s;}
+input:focus{border-color:var(--gold);}
+.btn-primary{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--amber));border:none;border-radius:7px;color:#0d0f0e;font-family:'Archivo Black',sans-serif;font-size:17px;letter-spacing:1px;cursor:pointer;margin-top:8px;transition:opacity .2s,transform .1s;}
+.btn-primary:active{transform:scale(.98);}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+.btn-ghost{width:100%;padding:12px;background:transparent;border:1px solid var(--bord2);border-radius:7px;color:var(--muted2);font-family:'Libre Franklin',sans-serif;font-size:14px;cursor:pointer;margin-top:10px;}
+.err-box{background:#d9404015;border:1px solid #d9404040;border-radius:7px;padding:10px 14px;font-size:13px;color:var(--red);margin-top:12px;display:none;}
+
+/* DEVICE PICKER */
+#devicePanel{display:none;}
+.dev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin:16px 0 20px;}
+.dev-card{background:var(--panel);border:1px solid var(--bord2);border-radius:12px;padding:20px;cursor:pointer;transition:border-color .2s,background .2s;}
+.dev-card:hover{border-color:var(--gold);background:var(--panel2);}
+.dev-name{font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--gold2);margin-bottom:4px;}
+.dev-id{font-family:'Fira Code',monospace;font-size:11px;color:var(--muted);}
+
+/* DASHBOARD */
+#dashboard{display:none;}
+
+/* BATCH INFO BAR */
+.batch-bar{background:var(--panel);border:1px solid var(--bord2);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.batch-name{font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--gold2);}
+.batch-meta{display:flex;gap:18px;flex-wrap:wrap;align-items:center;}
+.batch-item{text-align:center;}
+.batch-lbl{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+.batch-val{font-family:'Archivo Black',sans-serif;font-size:16px;color:var(--text);}
+.batch-timer{font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--gold);letter-spacing:-1px;}
+
+/* CHECKLIST */
+.checklist{background:var(--panel);border:1px solid var(--bord2);border-radius:12px;padding:14px 18px;margin-bottom:14px;}
+.checklist-inner{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;}
+.check-step{display:flex;align-items:center;gap:7px;padding:4px 0;}
+.check-icon{font-size:20px;line-height:1;flex-shrink:0;}
+.check-txt{font-family:'Fira Code',monospace;font-size:10px;color:var(--muted2);line-height:1.3;}
+.check-txt.done{color:var(--green);}
+.check-divider{width:1px;height:28px;background:var(--border);flex-shrink:0;}
+
+/* BANNERS */
+.banner{border-radius:14px;padding:18px 22px;margin-bottom:16px;animation:slideDown .4s ease;display:none;}
+.banner-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.banner-title{font-family:'Archivo Black',sans-serif;font-size:18px;margin-bottom:3px;}
+.banner-sub{font-family:'Fira Code',monospace;font-size:11px;color:var(--muted2);}
+.banner-timer{font-family:'Archivo Black',sans-serif;font-size:38px;letter-spacing:-1px;text-align:right;}
+.banner-timer-lbl{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:right;margin-bottom:2px;}
+
+/* Diacetyl rest banner */
+.diacetyl-banner{background:linear-gradient(135deg,#e8704018,#e8704005);border:2px solid var(--warm);}
+.diacetyl-banner .banner-title{color:var(--warm);}
+
+/* Dry hop banner */
+.dryhop-banner{background:linear-gradient(135deg,#e8b44a18,#e8b44a05);border:2px solid var(--gold2);animation:hopPulse 1.8s infinite,slideDown .4s ease;}
+.dryhop-banner .banner-title{color:var(--gold2);}
+
+/* Dry hop pause banner */
+.pause-banner{background:linear-gradient(135deg,#4a9edd18,#4a9edd05);border:2px solid var(--blue);}
+.pause-banner .banner-title{color:var(--blue);}
+
+/* Dry hop timer banner */
+.dryhop-timer-banner{background:linear-gradient(135deg,#e8b44a12,#e8b44a03);border:2px solid var(--gold);}
+.dryhop-timer-banner .banner-title{color:var(--gold2);}
+
+/* Velocity low banner */
+.vel-banner{background:linear-gradient(135deg,#e8c03018,#e8c03005);border:2px solid var(--yellow);}
+.vel-banner .banner-title{color:var(--yellow);}
+
+/* Cold crash ready */
+.cc-ready-banner{background:linear-gradient(135deg,#d9404022,#d9404008);border:2px solid var(--red);text-align:center;animation:bannerPulse 1.4s infinite,slideDown .4s ease;}
+.cc-title{font-family:'Archivo Black',sans-serif;font-size:28px;color:var(--red);margin-bottom:6px;animation:sgblink 1.4s infinite;}
+.cc-sub{font-family:'Fira Code',monospace;font-size:12px;color:var(--muted2);line-height:1.6;margin-bottom:16px;}
+.btn-start-cc{display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#4a9edd,#2a7abf);border:none;border-radius:10px;color:#fff;font-family:'Archivo Black',sans-serif;font-size:20px;letter-spacing:1px;cursor:pointer;}
+
+/* Cold crash active */
+.cc-active-banner{background:linear-gradient(135deg,#a8d8f018,#a8d8f005);border:2px solid var(--ice);animation:icePulse 2s infinite,slideDown .4s ease;}
+.cc-active-banner .banner-title{color:var(--ice);}
+
+/* Transfer ready */
+.transfer-banner{background:linear-gradient(135deg,#3dba7222,#3dba7208);border:2px solid var(--green);text-align:center;animation:greenPulse 1.8s infinite,slideDown .4s ease;}
+.transfer-title{font-family:'Archivo Black',sans-serif;font-size:28px;color:var(--green);margin-bottom:6px;}
+.transfer-sub{font-family:'Fira Code',monospace;font-size:12px;color:var(--muted2);}
+
+/* PRESSURE ALARM */
+.pressure-alarm{background:linear-gradient(135deg,#d9404018,#d9404005);border:2px solid var(--red);border-radius:14px;padding:12px 18px;margin-bottom:14px;display:none;align-items:center;gap:12px;animation:bannerPulse 1s infinite;}
+.pressure-alarm-txt{font-family:'Archivo Black',sans-serif;font-size:16px;color:var(--red);animation:redblink 1s infinite;}
+
+/* METRIC CARDS */
+.mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px;}
+@media(min-width:640px){.mgrid{grid-template-columns:repeat(4,1fr);}}
+.mcard{background:var(--panel);border:2px solid var(--bord2);border-radius:16px;padding:22px 20px 18px;position:relative;overflow:hidden;transition:border-color .4s;}
+.mcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0;transition:opacity .5s;}
+.mcard.fresh::before{opacity:1;}
+.mc-lbl{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.mc-val{font-family:'Archivo Black',sans-serif;font-size:48px;line-height:1;letter-spacing:-2px;color:var(--text);transition:color .4s;}
+.mc-unit{font-family:'Fira Code',monospace;font-size:14px;color:var(--muted2);margin-left:3px;}
+.mc-sub{font-family:'Fira Code',monospace;font-size:11px;color:var(--muted);margin-top:8px;min-height:16px;}
+.sg-red{color:var(--red)!important;}
+.sg-yellow{color:var(--yellow)!important;}
+.sg-green{color:var(--green)!important;}
+.sg-blink{animation:sgblink 1.2s infinite;}
+.mcard.bc-red{border-color:var(--red);}
+.mcard.bc-yellow{border-color:var(--yellow);}
+.mcard.bc-green{border-color:var(--green);}
+.mcard.bc-warm{border-color:var(--warm);}
+.mcard.bc-cool{border-color:var(--cool);}
+/* Temperature heating/cooling colors */
+.temp-heating{color:#e87040!important;}
+.temp-cooling{color:#5ab8f0!important;}
+.temp-stable{color:var(--text)!important;}
+
+/* 5-card grid for when pressure is active */
+@media(min-width:640px){.mgrid-5{grid-template-columns:repeat(5,1fr)!important;}}
+
+/* ABV SECTION */
+.abv-sec{background:var(--panel);border:1px solid var(--bord2);border-radius:16px;padding:24px;margin-bottom:14px;position:relative;overflow:hidden;}
+.abv-glass-bg{
+  position:absolute;right:24px;top:50%;transform:translateY(-50%);
+  opacity:0.22;pointer-events:none;user-select:none;
+  filter:drop-shadow(0 0 18px #c8922a88);
+}
+.abv-inner{display:flex;align-items:center;gap:24px;flex-wrap:wrap;position:relative;z-index:1;}
+.abv-big{font-family:'Archivo Black',sans-serif;font-size:72px;color:var(--gold2);line-height:1;letter-spacing:-3px;}
+.abv-big span{font-size:26px;color:var(--muted2);margin-left:5px;}
+.abv-detail{flex:1;min-width:180px;}
+.abv-row{display:flex;gap:24px;margin-bottom:12px;flex-wrap:wrap;}
+.abv-lbl{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.abv-num{font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--text);}
+.og-row{display:flex;align-items:center;gap:10px;margin-top:12px;}
+.og-row label{margin:0;font-size:10px;white-space:nowrap;}
+.og-row input{width:95px;padding:9px 12px;font-size:13px;}
+.btn-set{background:var(--panel2);border:1px solid var(--bord2);border-radius:7px;padding:9px 16px;color:var(--gold);font-family:'Fira Code',monospace;font-size:12px;cursor:pointer;transition:border-color .2s;}
+.btn-set:hover{border-color:var(--gold);}
+.prog-bar{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-top:10px;}
+.prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),var(--gold2));transition:width 1.2s ease;}
+
+/* CHART */
+.chart-panel{background:var(--panel);border:1px solid var(--bord2);border-radius:16px;padding:22px;margin-bottom:14px;}
+.chart-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.legend{display:flex;gap:16px;}
+.leg{display:flex;align-items:center;gap:6px;font-family:'Fira Code',monospace;font-size:11px;color:var(--muted2);}
+.leg-dot{width:8px;height:8px;border-radius:50%;}
+
+/* BOTTOM */
+.bottom-row{display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+.ring-wrap{position:relative;width:38px;height:38px;}
+.ring-wrap svg{transform:rotate(-90deg);}
+.cnt-wrap{display:flex;align-items:center;gap:12px;}
+.cnt-txt{font-family:'Fira Code',monospace;font-size:11px;color:var(--muted);}
+.btn-refresh{background:transparent;border:1px solid var(--bord2);border-radius:7px;padding:10px 18px;color:var(--muted2);font-family:'Fira Code',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:border-color .2s,color .2s;}
+.btn-refresh:hover{border-color:var(--gold);color:var(--gold);}
+.btn-newbatch{background:transparent;border:1px solid #d9404055;border-radius:7px;padding:10px 18px;color:#d9404099;font-family:'Fira Code',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:border-color .2s,color .2s;}
+.btn-newbatch:hover{border-color:var(--red);color:var(--red);}
+.btn-history{background:transparent;border:1px solid var(--border);border-radius:7px;padding:10px 18px;color:var(--muted);font-family:'Fira Code',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:border-color .2s,color .2s;}
+.btn-history:hover{border-color:var(--muted2);color:var(--muted2);}
+
+/* DRY HOP CONFIRM BUTTON */
+.btn-hop{display:inline-block;padding:14px 32px;background:linear-gradient(135deg,var(--gold),var(--amber));border:none;border-radius:10px;color:#0d0f0e;font-family:'Archivo Black',sans-serif;font-size:18px;letter-spacing:1px;cursor:pointer;margin-top:12px;}
+
+/* OVERLAYS */
+.overlay{display:none;position:fixed;inset:0;background:#00000090;z-index:100;align-items:center;justify-content:center;padding:16px;}
+.overlay.show{display:flex;}
+.modal{background:var(--panel);border:1px solid var(--bord2);border-radius:16px;padding:28px;width:100%;max-width:440px;animation:slideDown .3s ease;max-height:92vh;overflow-y:auto;}
+.modal h2{font-family:'Archivo Black',sans-serif;color:var(--gold2);font-size:22px;margin-bottom:6px;}
+.modal p{font-size:12px;color:var(--muted2);line-height:1.7;margin-bottom:20px;}
+.modal-icon{font-size:36px;margin-bottom:10px;}
+.modal-title{font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--text);margin-bottom:8px;}
+.modal-sub{font-family:'Fira Code',monospace;font-size:11px;color:var(--muted2);line-height:1.7;margin-bottom:22px;}
+.modal-btns{display:flex;gap:12px;margin-top:20px;}
+.modal-btns button{flex:1;padding:13px;border-radius:8px;font-family:'Archivo Black',sans-serif;font-size:15px;cursor:pointer;border:none;}
+.btn-yes{background:linear-gradient(135deg,var(--gold),var(--amber));color:#0d0f0e;}
+.btn-yes-green{background:linear-gradient(135deg,var(--green),#2a9e5a);color:#0d0f0e;}
+.btn-yes-red{background:var(--red);color:#fff;}
+.btn-no{background:var(--panel2);color:var(--muted2);border:1px solid var(--bord2)!important;}
+.modal-field{margin-bottom:14px;}
+.modal-field label{font-size:10px;}
+.modal-field input{font-size:13px;padding:10px 12px;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px;}
+.toggle-lbl{font-family:'Fira Code',monospace;font-size:11px;color:var(--text);}
+.toggle-sub{font-family:'Fira Code',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
+/* Toggle switch */
+.switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#2f382e;border-radius:24px;transition:.3s;}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:var(--muted);border-radius:50%;transition:.3s;}
+input:checked + .slider{background:var(--gold);}
+input:checked + .slider:before{transform:translateX(20px);background:#0d0f0e;}
+
+/* HISTORY */
+.history-list{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+.hist-item{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.hist-name{font-family:'Archivo Black',sans-serif;font-size:16px;color:var(--gold2);margin-bottom:6px;}
+.hist-meta{display:flex;gap:16px;flex-wrap:wrap;}
+.hist-kv{font-family:'Fira Code',monospace;font-size:10px;color:var(--muted2);}
+.hist-kv span{color:var(--text);}
+.hist-empty{font-family:'Fira Code',monospace;font-size:12px;color:var(--muted);text-align:center;padding:24px 0;}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--panel2);border:1px solid var(--bord2);border-radius:9px;padding:12px 20px;font-family:'Fira Code',monospace;font-size:12px;color:var(--text);z-index:999;transition:transform .3s;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">BREW<span> </span>CONTROL</div>
+  <div class="hdr-right">
+    <div class="status-pill"><div class="dot" id="statusDot"></div><span id="statusTxt">Not connected</span></div>
+    <div class="upd-txt" id="updTxt"></div>
+    <button class="logout-btn" id="logoutBtn" onclick="logout()">Log out</button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginPanel">
+  <h2>Connect to RAPT</h2>
+  <p>Log in with your email and API Secret from <strong>rapt.io → My Account → Api Secrets</strong>.</p>
+  <div class="field"><label>Email</label><input type="email" id="inUser" placeholder="your@email.com" autocomplete="email"></div>
+  <div class="field"><label>API Secret</label><input type="password" id="inKey" placeholder="From RAPT → Api Secrets" autocomplete="off"></div>
+  <button class="btn-primary" id="loginBtn" onclick="doLogin()">CONNECT</button>
+  <div class="err-box" id="loginErr"></div>
+  <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);font-family:'Fira Code',monospace;font-size:11px;color:var(--muted);line-height:1.9">Login is stored locally in your browser only.</div>
+</div>
+
+<!-- DEVICE PICKER -->
+<div id="devicePanel">
+  <div class="slabel">Select hydrometer</div>
+  <div class="dev-grid" id="devGrid"></div>
+  <button class="btn-ghost" onclick="logout()">← Back</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+
+  <!-- BATCH INFO BAR -->
+  <div class="batch-bar" id="batchBar" style="display:none">
+    <div>
+      <div class="batch-name" id="batchNameDisp">–</div>
+      <div style="font-family:'Fira Code',monospace;font-size:10px;color:var(--muted);margin-top:2px" id="batchDateDisp"></div>
+    </div>
+    <div class="batch-meta">
+      <div class="batch-item"><div class="batch-lbl">OG</div><div class="batch-val" id="batchOGDisp">–</div></div>
+      <div class="batch-item"><div class="batch-lbl">Mål FG</div><div class="batch-val" id="batchFGDisp">–</div></div>
+      <div class="batch-item"><div class="batch-lbl">Mål ABV</div><div class="batch-val" id="batchABVDisp">–</div></div>
+      <div class="batch-item"><div class="batch-lbl">Mål Temp</div><div class="batch-val" id="batchTempDisp">–</div></div>
+      <div class="batch-item"><div class="batch-lbl">Trykk</div><div class="batch-val" id="batchPSIDisp">–</div></div>
+      <div>
+        <div class="batch-lbl">Batch tid</div>
+        <div class="batch-timer" id="batchTimerDisp">0d 0t</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="checklist">
+    <div class="checklist-inner">
+      <div class="check-step"><div class="check-icon" id="chk0">⬜</div><div class="check-txt" id="chkTxt0">Gjæring<br>startet</div></div>
+      <div class="check-divider"></div>
+      <div class="check-step"><div class="check-icon" id="chk1">⬜</div><div class="check-txt" id="chkTxt1">Diacetyl<br>rest</div></div>
+      <div class="check-divider"></div>
+      <div class="check-step"><div class="check-icon" id="chk2">⬜</div><div class="check-txt" id="chkTxt2">Tørrhumle<br>tilsatt</div></div>
+      <div class="check-divider"></div>
+      <div class="check-step"><div class="check-icon" id="chk3">⬜</div><div class="check-txt" id="chkTxt3">Gjæring<br>ferdig</div></div>
+      <div class="check-divider"></div>
+      <div class="check-step"><div class="check-icon" id="chk4">⬜</div><div class="check-txt" id="chkTxt4">Cold crash<br>startet</div></div>
+      <div class="check-divider"></div>
+      <div class="check-step"><div class="check-icon" id="chk5">⬜</div><div class="check-txt" id="chkTxt5">Klar for<br>overføring</div></div>
+    </div>
+  </div>
+
+  <!-- PRESSURE ALARM -->
+  <div class="pressure-alarm" id="pressureAlarm">
+    <span style="font-size:24px">⚠️</span>
+    <div class="pressure-alarm-txt">TRYKK ALARM – Under 5 PSI!</div>
+    <div style="font-family:'Fira Code',monospace;font-size:11px;color:var(--muted2)">Sjekk gjæringstanken</div>
+  </div>
+
+  <!-- DIACETYL REST BANNER -->
+  <div class="banner diacetyl-banner" id="diacetylBanner">
+    <div class="banner-inner">
+      <div>
+        <div class="banner-title">🌡️ Diacetyl Rest</div>
+        <div class="banner-sub">SG nær mål-FG · Temperatur hevet til 3°C<br>RAPT Controller justerer automatisk</div>
+      </div>
+      <div style="text-align:right">
+        <div class="banner-timer-lbl">Mål FG om ca.</div>
+        <div class="banner-timer" style="color:var(--warm);font-size:24px" id="diacetylSGInfo">–</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRY HOP READY BANNER -->
+  <div class="banner dryhop-banner" id="dryHopBanner">
+    <div style="text-align:center;width:100%">
+      <div style="font-size:42px;margin-bottom:8px">🌿</div>
+      <div class="banner-title" style="font-size:26px;font-family:'Archivo Black',sans-serif">TID FOR TØRRHUMLE!</div>
+      <div class="banner-sub" style="margin:8px 0 16px">Velocity er nær 0 · Gjæringen er ferdig<br>Tilsett tørrhumle og bekreft nedenfor</div>
+      <button class="btn-hop" onclick="confirmDryHop()">🌿 TØRRHUMLE TILSATT – START 72T TIMER</button>
+    </div>
+  </div>
+
+  <!-- DRY HOP PAUSE BANNER -->
+  <div class="banner pause-banner" id="pauseBanner">
+    <div class="banner-inner">
+      <div>
+        <div class="banner-title">⏸️ Målinger pauset</div>
+        <div class="banner-sub">30 minutters pause etter tørrhumle-tilsetting<br>Feilmålinger ignoreres</div>
+      </div>
+      <div>
+        <div class="banner-timer-lbl">Pause slutter om</div>
+        <div class="banner-timer" style="color:var(--blue)" id="pauseTimerTxt">30:00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRY HOP TIMER BANNER -->
+  <div class="banner dryhop-timer-banner" id="dryHopTimerBanner">
+    <div class="banner-inner">
+      <div>
+        <div class="banner-title">🌿 Tørrhumle timer</div>
+        <div class="banner-sub">72 timer til cold crash starter</div>
+      </div>
+      <div>
+        <div class="banner-timer-lbl">Tid igjen</div>
+        <div class="banner-timer" style="color:var(--gold2)" id="dryHopTimerTxt">72:00:00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VELOCITY LOW BANNER -->
+  <div class="banner vel-banner" id="velBanner">
+    <div class="banner-inner">
+      <div>
+        <div class="banner-title">⚠️ Gjæring bremser</div>
+        <div class="banner-sub">Velocity under 0.1 · Cold crash starter etter 48t</div>
+      </div>
+      <div>
+        <div class="banner-timer-lbl">Lav velocity i</div>
+        <div class="banner-timer" style="color:var(--yellow)" id="velTimerTxt">00:00:00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLD CRASH READY BANNER -->
+  <div class="banner cc-ready-banner" id="ccReadyBanner">
+    <div class="cc-icon" style="font-size:48px;margin-bottom:8px">❄️🍺</div>
+    <div class="cc-title">KLAR TIL COLD CRASH!</div>
+    <div class="cc-sub">Velocity lav i 48+ timer · Gjæringen er ferdig<br>RAPT Controller senker temperatur til 2°C automatisk</div>
+    <button class="btn-start-cc" onclick="startColdCrash()">❄️ START COLD CRASH</button>
+  </div>
+
+  <!-- COLD CRASH ACTIVE BANNER -->
+  <div class="banner cc-active-banner" id="ccActiveBanner">
+    <div class="banner-inner">
+      <div>
+        <div class="banner-title">❄️ Cold Crash pågår</div>
+        <div class="banner-sub" id="ccActiveSub">Venter på temp under 3°C...</div>
+        <div style="font-family:'Fira Code',monospace;font-size:11px;color:var(--muted2);margin-top:4px" id="ccWaitingTxt"></div>
+      </div>
+      <div>
+        <div class="banner-timer-lbl">Varighet</div>
+        <div class="banner-timer" style="color:var(--ice)" id="ccTimerTxt">00:00:00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSFER READY BANNER -->
+  <div class="banner transfer-banner" id="transferBanner">
+    <div style="font-size:52px;margin-bottom:8px">🚰🍺</div>
+    <div class="transfer-title">KLAR FOR OVERFØRING TIL FAT!</div>
+    <div class="transfer-sub">Cold crash i 48+ timer · Ølet er klart for tapping</div>
+  </div>
+
+  <!-- METRIC CARDS -->
+  <div class="slabel" id="devLabel">RAPT PILL</div>
+  <div class="mgrid" id="metricGrid">
+    <div class="mcard" id="sgCard">
+      <div class="mc-lbl">Gravity SG</div>
+      <div><span class="mc-val" id="sgVal">–</span></div>
+      <div class="mc-sub" id="sgSub">–</div>
+    </div>
+    <div class="mcard" id="tempCard">
+      <div class="mc-lbl">Temperatur</div>
+      <div><span class="mc-val" id="tempVal">–</span><span class="mc-unit">°C</span></div>
+      <div class="mc-sub" id="tempSub"></div>
+    </div>
+    <div class="mcard" id="abvCard">
+      <div class="mc-lbl">Alkohol ABV</div>
+      <div><span class="mc-val" id="abvMini">–</span><span class="mc-unit">%</span></div>
+      <div class="mc-sub" id="abvSub">Start ny batch for å sette OG</div>
+    </div>
+    <div class="mcard" id="velCard">
+      <div class="mc-lbl">Velocity</div>
+      <div><span class="mc-val" id="velVal" style="font-size:36px">–</span></div>
+      <div class="mc-sub">SG pts/dag</div>
+    </div>
+    <!-- Pressure card – hidden until batch has pressure set -->
+    <div class="mcard" id="pressureCard" style="display:none">
+      <div class="mc-lbl">Trykk</div>
+      <div><span class="mc-val" id="pressureVal" style="font-size:36px">–</span><span class="mc-unit">PSI</span></div>
+      <div class="mc-sub" id="pressureSub">Manuelt innstilt</div>
+    </div>
+  </div>
+
+  <!-- ABV SECTION -->
+  <div class="abv-sec">
+    <div class="abv-glass-bg">
+      <svg width="160" height="200" viewBox="0 0 160 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="beerGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#c8922a" stop-opacity="0.55"/>
+            <stop offset="50%" stop-color="#e8b44a" stop-opacity="0.45"/>
+            <stop offset="100%" stop-color="#c8922a" stop-opacity="0.55"/>
+          </linearGradient>
+          <linearGradient id="glassGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#e8b44a" stop-opacity="0.7"/>
+            <stop offset="40%" stop-color="#ffd980" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="#c8922a" stop-opacity="0.7"/>
+          </linearGradient>
+          <linearGradient id="foamGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fffbe8" stop-opacity="0.95"/>
+            <stop offset="100%" stop-color="#e8b44a" stop-opacity="0.8"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Handle -->
+        <path d="M108 55 Q148 55 148 95 Q148 135 108 135" stroke="url(#glassGrad)" stroke-width="10" fill="none" stroke-linecap="round" filter="url(#glow)"/>
+        <path d="M108 55 Q140 55 140 95 Q140 135 108 135" stroke="#ffd98055" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <!-- Glass body outline -->
+        <path d="M22 28 L30 168 Q30 176 40 176 L100 176 Q110 176 110 168 L118 28 Z" fill="#c8922a18" stroke="url(#glassGrad)" stroke-width="4" filter="url(#glow)"/>
+        <!-- Glass highlight left -->
+        <path d="M30 50 L34 160" stroke="#ffd98040" stroke-width="6" stroke-linecap="round"/>
+        <!-- Beer fill -->
+        <path d="M28 58 L32 168 Q32 172 40 172 L100 172 Q108 172 108 168 L112 58 Z" fill="url(#beerGrad)"/>
+        <!-- Foam blobs -->
+        <ellipse cx="70" cy="36" rx="42" ry="14" fill="url(#foamGrad)" filter="url(#glow)"/>
+        <ellipse cx="44" cy="30" rx="18" ry="14" fill="url(#foamGrad)"/>
+        <ellipse cx="70" cy="24" rx="22" ry="15" fill="#fffbe8cc"/>
+        <ellipse cx="96" cy="30" rx="18" ry="14" fill="url(#foamGrad)"/>
+        <ellipse cx="58" cy="22" rx="14" ry="11" fill="#ffffffaa"/>
+        <ellipse cx="82" cy="20" rx="12" ry="10" fill="#ffffffaa"/>
+        <!-- Bubbles -->
+        <circle cx="58" cy="140" r="4" fill="#e8b44a50"/>
+        <circle cx="80" cy="110" r="3" fill="#e8b44a45"/>
+        <circle cx="66" cy="85" r="3.5" fill="#e8b44a45"/>
+        <circle cx="88" cy="150" r="2.5" fill="#e8b44a40"/>
+        <circle cx="52" cy="100" r="2" fill="#e8b44a35"/>
+        <circle cx="74" cy="65" r="2.5" fill="#e8b44a40"/>
+        <!-- Shine -->
+        <path d="M36 45 Q38 90 36 140" stroke="#ffffff18" stroke-width="8" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="slabel">Brewing calculator</div>
+    <div class="abv-inner">
+      <div class="abv-big" id="abvBig">–<span>%</span></div>
+      <div class="abv-detail">
+        <div class="abv-row">
+          <div><div class="abv-lbl">OG (Start)</div><div class="abv-num" id="ogDisp">–</div></div>
+          <div><div class="abv-lbl">FG (Nå)</div><div class="abv-num" id="fgDisp">–</div></div>
+          <div><div class="abv-lbl">Maks ABV</div><div class="abv-num" id="maxAbv">–</div></div>
+        </div>
+        <div class="prog-bar"><div class="prog-fill" id="abvBar" style="width:0%"></div></div>
+        <!-- OG is set at batch start -->
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-panel">
+    <div class="chart-hdr">
+      <div class="slabel" style="margin:0">Historikk 24t</div>
+      <div class="legend">
+        <div class="leg"><div class="leg-dot" style="background:var(--gold2)"></div>SG</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--blue);opacity:.8"></div>Temp °C</div>
+      </div>
+    </div>
+    <canvas id="chart" height="220"></canvas>
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="bottom-row">
+    <div class="cnt-wrap">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 38 38" width="38" height="38">
+          <circle cx="19" cy="19" r="16" fill="none" stroke="var(--bord2)" stroke-width="2.5"/>
+          <circle id="ringProg" cx="19" cy="19" r="16" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="100.53" stroke-dashoffset="100.53" style="transition:stroke-dashoffset 1s linear"/>
+        </svg>
+      </div>
+      <span class="cnt-txt" id="cntTxt">–</span>
+    </div>
+    <button class="btn-history" onclick="showHistory()">📋 Historikk</button>
+    <button class="btn-refresh" onclick="fetchRAPT()">↻ Oppdater nå</button>
+    <button class="btn-newbatch" onclick="openNewBatch()">⟳ New Batch</button>
+  </div>
+
+</div><!-- end dashboard -->
+</div><!-- end app -->
+
+<!-- BATCH SETUP MODAL -->
+<div class="overlay" id="batchModal">
+  <div class="modal">
+    <h2>🍺 Start ny batch</h2>
+    <p>Fyll inn info fra arket som følger med wort-kittet.</p>
+    <div class="modal-field"><label>Batch-navn</label><input type="text" id="bIn_name" placeholder="f.eks. Fredagspils"></div>
+    <div class="modal-field"><label>OG (Original Gravity)</label><input type="number" id="bIn_og" placeholder="1.065" step="0.001"></div>
+    <div class="modal-field"><label>Mål FG (Final Gravity)</label><input type="number" id="bIn_fg" placeholder="1.012" step="0.001"></div>
+    <div class="modal-field"><label>Forventet ABV %</label><input type="number" id="bIn_abv" placeholder="6.8" step="0.1"></div>
+    <div class="modal-field"><label>Ønsket gjæringstemperatur (°C)</label><input type="number" id="bIn_fermentTemp" placeholder="f.eks. 20" step="0.5" min="0" max="40"></div>
+    <div class="modal-field"><label>Gjæringstrykk (PSI) – valgfritt</label><input type="number" id="bIn_psi" placeholder="f.eks. 10" step="0.5" min="0"></div>
+    <div style="margin:16px 0 8px;font-family:'Fira Code',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted2)">Tilvalg</div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">Tørrhumle</div><div class="toggle-sub">Varsel når det er tid for å tilsette</div></div>
+      <label class="switch"><input type="checkbox" id="bIn_dryhop"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">RAPT Temperature Controller</div><div class="toggle-sub">Automatisk temperaturkontroll</div></div>
+      <label class="switch"><input type="checkbox" id="bIn_tempctrl"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">RAPT Spunding Valve</div><div class="toggle-sub">Automatisk trykkregulering</div></div>
+      <label class="switch"><input type="checkbox" id="bIn_pressure"><span class="slider"></span></label>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-yes" onclick="confirmStartBatch()">START GJÆRING</button>
+      <button class="btn-no" onclick="closeBatchModal()">AVBRYT</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM NEW BATCH -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal" style="text-align:center">
+    <div class="modal-icon">🍺</div>
+    <div class="modal-title">Start New Batch?</div>
+    <div class="modal-sub">Dette nullstiller alle timere, OG og batch-info.<br><br>Sørg for at du har startet ny batch i RAPT-appen først.</div>
+    <div class="modal-btns">
+      <button class="btn-yes-red" onclick="doNewBatch()">JA, NULLSTILL</button>
+      <button class="btn-no" onclick="closeConfirm()">AVBRYT</button>
+    </div>
+  </div>
+</div>
+
+<!-- DRY HOP CONFIRM MODAL -->
+<div class="overlay" id="dryHopConfirmModal">
+  <div class="modal" style="text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">🌿</div>
+    <div class="modal-title">Bekreft tørrhumle</div>
+    <div class="modal-sub">Er tørrhumlen tilsatt i tanken?<br><br>Målinger vil bli pauset i 30 minutter for å unngå feilmålinger. Deretter starter 72-timers timer før cold crash.</div>
+    <div class="modal-btns">
+      <button class="btn-yes" onclick="dryHopAdded()">✓ JA, TILSATT!</button>
+      <button class="btn-no" onclick="closeDryHopConfirm()">AVBRYT</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="overlay" id="historyModal">
+  <div class="modal" style="max-width:500px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="margin:0">📋 Tidligere batches</h2>
+      <button onclick="closeHistory()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PROXY          = 'https://corsproxy.io/?url=';
+const INTERVAL       = 10 * 60 * 1000;
+const TOK_TTL        = 50 * 60 * 1000;
+const CIRC           = 100.53;
+const VEL_THRESH     = 0.1;
+const DRYHOP_VEL_H   = 12; // hours velocity must be below thresh before dry hop alert
+const CC_TRIGGER_H   = 48;
+const DRYHOP_H       = 72;
+const CC_TEMP_THRESH = 3.0;
+const TRANSFER_H     = 48;
+const PAUSE_MIN      = 30;
+const DIACETYL_POINTS = 4;  // trigger diacetyl rest when within 4 SG points of target FG
+const PRESSURE_MIN_PSI = 5;
+const PRESSURE_ACTIVE_AFTER_H = 48;
+
+const S = {
+  token:null, username:null, apiKey:null,
+  device:null, devices:[], history:[], og:null,
+  countdown: INTERVAL/1000, timers:{},
+  batch: null,
+  // diacetyl
+  diacetylActive: false,
+  // dry hop
+  dryHopVelSince: null,  // when velocity first dropped below thresh for dry hop
+  dryHopReady: false,
+  dryHopAdded: false,
+  dryHopAddedTime: null,
+  pauseUntil: null,
+  dryHopTimerStart: null,
+  // velocity / cold crash
+  velLowSince: null,
+  ccMode: false, ccStarted: null, ccTimerStarted: null,
+  lastTemp: null,
+  // rapt temp controller
+  raptTempCtrl: false,
+  tempCtrlStatus: 'stable', // 'heating','cooling','stable'
+  // pressure
+  currentPSI: null,
+};
+
+// ── INIT ──────────────────────────────────────────────────
+(function init(){
+  try {
+    const c = JSON.parse(localStorage.getItem('bc5_creds')||'{}');
+    if(c.u) document.getElementById('inUser').value = c.u;
+    if(c.k) document.getElementById('inKey').value  = c.k;
+    const d = JSON.parse(localStorage.getItem('bc5_dev')||'null');
+    if(d) S.device = d;
+    S.og = parseFloat(localStorage.getItem('bc5_og'))||null;
+    const b = JSON.parse(localStorage.getItem('bc5_batch')||'null');
+    if(b) S.batch = b;
+    const st = JSON.parse(localStorage.getItem('bc5_state')||'null');
+    if(st){
+      S.diacetylActive    = st.diacetylActive||false;
+      S.dryHopVelSince    = st.dryHopVelSince||null;
+      S.dryHopReady       = st.dryHopReady||false;
+      S.dryHopAdded       = st.dryHopAdded||false;
+      S.dryHopAddedTime   = st.dryHopAddedTime||null;
+      S.pauseUntil        = st.pauseUntil||null;
+      S.dryHopTimerStart  = st.dryHopTimerStart||null;
+      S.velLowSince       = st.velLowSince||null;
+      S.ccMode            = st.ccMode||false;
+      S.ccStarted         = st.ccStarted||null;
+      S.ccTimerStarted    = st.ccTimerStarted||null;
+      S.currentPSI        = st.currentPSI||null;
+    }
+    if(c.u && c.k && S.device) autoConnect(c.u, c.k);
+  } catch(e){ console.error(e); }
+})();
+
+function saveState(){
+  localStorage.setItem('bc5_state', JSON.stringify({
+    diacetylActive:S.diacetylActive, dryHopVelSince:S.dryHopVelSince, dryHopReady:S.dryHopReady,
+    dryHopAdded:S.dryHopAdded, dryHopAddedTime:S.dryHopAddedTime,
+    pauseUntil:S.pauseUntil, dryHopTimerStart:S.dryHopTimerStart,
+    velLowSince:S.velLowSince, ccMode:S.ccMode, ccStarted:S.ccStarted,
+    ccTimerStarted:S.ccTimerStarted, currentPSI:S.currentPSI
+  }));
+}
+
+// ── AUTH ──────────────────────────────────────────────────
+async function getToken(u,k){
+  const r = await fetch(PROXY+encodeURIComponent('https://id.rapt.io/connect/token'),{
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({client_id:'rapt-user',grant_type:'password',username:u,password:k})
+  });
+  if(!r.ok) throw new Error('Authentication failed');
+  return (await r.json()).access_token;
+}
+
+async function autoConnect(u,k){
+  setStatus('busy','Connecting...');
+  try {
+    S.token=await getToken(u,k); S.username=u; S.apiKey=k;
+    showDash(); await fetchRAPT(); startTimers();
+    document.getElementById('logoutBtn').style.display='block';
+  } catch(e){ setStatus('err','Error – please log in again'); }
+}
+
+async function doLogin(){
+  const u=document.getElementById('inUser').value.trim();
+  const k=document.getElementById('inKey').value.trim();
+  const errEl=document.getElementById('loginErr');
+  errEl.style.display='none';
+  if(!u||!k){ showErr(errEl,'Please enter email and API Secret.'); return; }
+  setBtnLoading(true); setStatus('busy','Connecting...');
+  try {
+    S.token=await getToken(u,k); S.username=u; S.apiKey=k;
+    localStorage.setItem('bc5_creds',JSON.stringify({u,k}));
+    const devs=await getDevices(); S.devices=devs;
+    if(!devs.length){ showErr(errEl,'No hydrometers found.'); return; }
+    if(devs.length===1){
+      S.device=devs[0]; localStorage.setItem('bc5_dev',JSON.stringify(S.device));
+      showDash(); await fetchRAPT(); startTimers();
+    } else { showDevPicker(devs); }
+    document.getElementById('logoutBtn').style.display='block';
+  } catch(e){ showErr(errEl,e.message); setStatus('err','Error');
+  } finally { setBtnLoading(false); }
+}
+
+async function getDevices(){
+  const r=await fetch(PROXY+encodeURIComponent('https://api.rapt.io/api/Hydrometers/GetHydrometers'),{headers:{Authorization:'Bearer '+S.token}});
+  if(!r.ok) throw new Error('Could not fetch devices');
+  return r.json();
+}
+
+async function refreshToken(){ try{ S.token=await getToken(S.username,S.apiKey); }catch(e){} }
+
+function showDevPicker(devs){
+  document.getElementById('loginPanel').style.display='none';
+  document.getElementById('devicePanel').style.display='block';
+  document.getElementById('devGrid').innerHTML=devs.map((d,i)=>
+    `<div class="dev-card" onclick="pickDev(${i})"><div class="dev-name">${d.name||'Hydrometer '+(i+1)}</div><div class="dev-id">${d.id||''}</div></div>`).join('');
+}
+
+async function pickDev(i){
+  S.device=S.devices[i]; localStorage.setItem('bc5_dev',JSON.stringify(S.device));
+  showDash(); await fetchRAPT(); startTimers();
+}
+
+function showDash(){
+  document.getElementById('loginPanel').style.display='none';
+  document.getElementById('devicePanel').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  if(S.device) document.getElementById('devLabel').textContent=S.device.name||'RAPT PILL';
+  if(S.og){ document.getElementById('ogDisp').textContent=S.og.toFixed(3); }
+  updateBatchBar(); updateChecklist(); updatePressureCard();
+}
+
+function logout(){
+  Object.values(S.timers).forEach(clearInterval);
+  S.token=null; S.device=null;
+  document.getElementById('loginPanel').style.display='block';
+  document.getElementById('devicePanel').style.display='none';
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('logoutBtn').style.display='none';
+  localStorage.removeItem('bc5_dev');
+  setStatus('','Not connected');
+}
+
+// ── FETCH ─────────────────────────────────────────────────
+async function fetchRAPT(){
+  if(!S.token||!S.device) return;
+  setStatus('busy','Henter...');
+  try {
+    const end=new Date(), start=new Date(end-24*60*60*1000);
+    const url=`https://api.rapt.io/api/Hydrometers/GetTelemetry?hydrometerId=${S.device.id}&startDate=${start.toISOString()}&endDate=${end.toISOString()}`;
+    const r=await fetch(PROXY+encodeURIComponent(url),{headers:{Authorization:'Bearer '+S.token}});
+    if(r.status===401){ await refreshToken(); return fetchRAPT(); }
+    if(!r.ok) throw new Error('Telemetri-feil');
+    const data=await r.json();
+    S.history=(Array.isArray(data)?data:(data.telemetry||[])).sort((a,b)=>new Date(a.timestamp||a.createdOn)-new Date(b.timestamp||b.createdOn));
+    updateDash();
+    setStatus('ok','Connected');
+    document.getElementById('updTxt').textContent='Updated '+new Date().toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'});
+    showToast('Updated');
+  } catch(e){ setStatus('err','Error'); console.error(e); }
+}
+
+// ── UPDATE DASHBOARD ──────────────────────────────────────
+function updateDash(){
+  if(!S.history.length) return;
+
+  // If measurements paused, skip data update
+  if(S.pauseUntil && Date.now() < S.pauseUntil){
+    updateBanners(); updateChecklist(); return;
+  }
+
+  const last=S.history[S.history.length-1];
+  const prev=S.history.length>1?S.history[S.history.length-2]:last;
+  const normSG=v=>{ const n=parseFloat(v||0); return n>100?n/1000:n; };
+  const sg=normSG(last.gravity||last.specificGravity);
+  const sgPr=normSG(prev.gravity||prev.specificGravity);
+  const temp=parseFloat(last.temperature||last.temperatureCelsius||0);
+  const vel=Math.abs(parseFloat(last.gravityVelocity||0));
+  S.lastTemp=temp;
+
+  // ── Gravity card ──
+  const sgEl=document.getElementById('sgVal');
+  sgEl.textContent=sg.toFixed(3); sgEl.className='mc-val';
+  document.getElementById('sgCard').className='mcard';
+  const diff=sg-sgPr;
+  document.getElementById('sgSub').textContent=diff===0?'stabil':diff>0?('opp +'+Math.abs(diff).toFixed(4)):('ned '+diff.toFixed(4));
+
+  // ── Temperature card with heating/cooling colors ──
+  const tempEl=document.getElementById('tempVal');
+  const tempCard=document.getElementById('tempCard');
+  tempEl.textContent=temp.toFixed(1);
+  tempEl.className='mc-val';
+  tempCard.className='mcard';
+  // Temperature colors only when RAPT Temp Controller is enabled
+  if(S.batch&&S.batch.tempCtrl){
+    const targetTemp = S.batch.fermentTemp ? parseFloat(S.batch.fermentTemp) : null;
+    if(targetTemp !== null){
+      const diff = temp - targetTemp;
+      if(diff < -0.5){ tempEl.classList.add('temp-heating'); tempCard.classList.add('bc-warm'); document.getElementById('tempSub').textContent='🔴 Varmer opp · mål: '+targetTemp+'°C'; }
+      else if(diff > 0.5){ tempEl.classList.add('temp-cooling'); tempCard.classList.add('bc-cool'); document.getElementById('tempSub').textContent='🔵 Kjøler ned · mål: '+targetTemp+'°C'; }
+      else { tempEl.classList.add('temp-stable'); document.getElementById('tempSub').textContent='✓ På temperatur · '+targetTemp+'°C'; }
+    } else {
+      const td=temp-parseFloat(prev.temperature||prev.temperatureCelsius||temp);
+      if(td > 0.05){ tempEl.classList.add('temp-heating'); tempCard.classList.add('bc-warm'); document.getElementById('tempSub').textContent='🔴 Varmer opp'; }
+      else if(td < -0.05){ tempEl.classList.add('temp-cooling'); tempCard.classList.add('bc-cool'); document.getElementById('tempSub').textContent='🔵 Kjøler ned'; }
+      else { tempEl.classList.add('temp-stable'); document.getElementById('tempSub').textContent='På temperatur'; }
+    }
+  } else {
+    // No temp controller – neutral display
+    const td2=temp-parseFloat(prev.temperature||prev.temperatureCelsius||temp);
+    document.getElementById('tempSub').textContent=td2===0?'stabil':td2>0?('+'+Math.abs(td2).toFixed(1)+'°'):(td2.toFixed(1)+'°');
+  }
+
+  // ── Velocity card ──
+  const velEl=document.getElementById('velVal');
+  const velCard=document.getElementById('velCard');
+  velEl.className='mc-val'; velCard.className='mcard';
+  velEl.textContent=vel.toFixed(3);
+  if(vel<VEL_THRESH){
+    if(S.ccMode){ velEl.classList.add('sg-blink','sg-red'); velCard.classList.add('bc-red'); }
+    else { velEl.classList.add('sg-yellow'); velCard.classList.add('bc-yellow'); }
+  } else { velEl.classList.add('sg-green'); velCard.classList.add('bc-green'); }
+
+  // ── ABV ──
+  const ogSrc=S.og||(S.batch&&S.batch.og)||null;
+  if(ogSrc&&sg>0){
+    const abv=(ogSrc-sg)*131.25;
+    const maxAbv=(ogSrc-1.000)*131.25;
+    const pct=Math.min(100,(abv/Math.max(maxAbv,0.01))*100);
+    document.getElementById('abvMini').textContent=abv.toFixed(1);
+    document.getElementById('abvBig').innerHTML=abv.toFixed(1)+'<span>%</span>';
+    document.getElementById('ogDisp').textContent=ogSrc.toFixed(3);
+    document.getElementById('fgDisp').textContent=sg.toFixed(3);
+    document.getElementById('maxAbv').textContent=maxAbv.toFixed(1)+'%';
+    document.getElementById('abvBar').style.width=pct+'%';
+    document.getElementById('abvSub').textContent='av maks '+maxAbv.toFixed(1)+'%';
+  }
+
+  // ── Diacetyl rest logic ──
+  if(S.batch&&S.batch.targetFg&&!S.diacetylActive&&!S.ccMode){
+    const targetFg=parseFloat(S.batch.targetFg);
+    const diacetylTrigger=targetFg+(DIACETYL_POINTS/1000);
+    if(sg <= diacetylTrigger && sg > targetFg){
+      S.diacetylActive=true;
+      saveState();
+      showToast('Diacetyl rest trigget – temperatur heves til 3°C');
+    }
+  }
+
+  // ── Velocity low timer (only if no dry hop pending or added) ──
+  if(!S.ccMode && !S.dryHopAdded && !(S.batch&&S.batch.dryHop&&S.dryHopReady)){
+    if(vel<VEL_THRESH){
+      if(!S.velLowSince){ S.velLowSince=Date.now(); saveState(); }
+    } else {
+      if(S.velLowSince){ S.velLowSince=null; saveState(); showToast('Velocity opp igjen – timer nullstilt'); }
+    }
+  }
+
+  // ── Dry hop ready trigger ──
+  // Dry hop: velocity must be below thresh for 12h before alerting
+  if(S.batch&&S.batch.dryHop&&!S.dryHopAdded&&!S.dryHopReady){
+    if(vel<VEL_THRESH){
+      if(!S.dryHopVelSince){ S.dryHopVelSince=Date.now(); saveState(); }
+      else if((Date.now()-S.dryHopVelSince)/(3600000)>=DRYHOP_VEL_H){
+        S.dryHopReady=true; saveState();
+        showToast('Tørrhumle klar – velocity lav i 12t!');
+      }
+    } else {
+      if(S.dryHopVelSince){ S.dryHopVelSince=null; saveState(); }
+    }
+  }
+
+  // ── Cold crash temp check ──
+  if(S.ccMode&&!S.ccTimerStarted&&temp<CC_TEMP_THRESH){
+    S.ccTimerStarted=Date.now(); saveState();
+    showToast('Temp under 3°C – cold crash timer startet!');
+  }
+
+  // ── Pressure alarm ──
+  updatePressureAlarm();
+
+  ['sgCard','tempCard','abvCard','velCard'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.remove('fresh');
+    setTimeout(()=>el.classList.add('fresh'),10);
+    setTimeout(()=>el.classList.remove('fresh'),2000);
+  });
+
+  updateBanners(); updateChecklist(); drawChart();
+}
+
+// ── PRESSURE ──────────────────────────────────────────────
+function updatePressureCard(){
+  const card=document.getElementById('pressureCard');
+  const grid=document.getElementById('metricGrid');
+  if(S.batch&&S.batch.psi){
+    card.style.display='block';
+    document.getElementById('pressureVal').textContent=S.batch.psi;
+    document.getElementById('pressureSub').textContent=S.batch.pressure?'Auto-regulert':'Manuelt innstilt';
+    grid.classList.add('mgrid-5');
+    grid.style.gridTemplateColumns='repeat(5,1fr)';
+  } else {
+    card.style.display='none';
+    grid.style.gridTemplateColumns='';
+  }
+}
+
+function updatePressureAlarm(){
+  const alarm=document.getElementById('pressureAlarm');
+  if(!S.batch||!S.batch.psi) { alarm.style.display='none'; return; }
+  // Only active after 48h
+  if(!S.batch.startTime||(Date.now()-S.batch.startTime)<PRESSURE_ACTIVE_AFTER_H*3600*1000){
+    alarm.style.display='none'; return;
+  }
+  if(S.batch.psi < PRESSURE_MIN_PSI){
+    alarm.style.display='flex';
+  } else {
+    alarm.style.display='none';
+  }
+}
+
+// ── BANNERS ───────────────────────────────────────────────
+function updateBanners(){
+  const show=(id,v)=>{ document.getElementById(id).style.display=v?'block':'none'; };
+  const showFlex=(id,v)=>{ document.getElementById(id).style.display=v?'flex':'none'; };
+
+  const ccElapsed=S.ccTimerStarted?Date.now()-S.ccTimerStarted:0;
+  const transferReady=S.ccMode&&S.ccTimerStarted&&(ccElapsed/(3600000)>=TRANSFER_H);
+  const isPaused=S.pauseUntil&&Date.now()<S.pauseUntil;
+  const dryHopTimerDone=S.dryHopTimerStart&&(Date.now()-S.dryHopTimerStart)/(3600000)>=DRYHOP_H;
+  const velElapsed=S.velLowSince?(Date.now()-S.velLowSince)/3600000:0;
+  const ccTrigger=!S.batch?.dryHop&&velElapsed>=CC_TRIGGER_H;
+
+  // Diacetyl
+  show('diacetylBanner', S.diacetylActive&&!S.ccMode);
+  if(S.batch&&S.batch.targetFg&&S.diacetylActive){
+    document.getElementById('diacetylSGInfo').textContent='SG: '+parseFloat(S.batch.targetFg).toFixed(3);
+  }
+
+  // Dry hop flow
+  show('dryHopBanner', S.dryHopReady&&!S.dryHopAdded&&!isPaused);
+  show('pauseBanner', isPaused);
+  show('dryHopTimerBanner', S.dryHopAdded&&S.dryHopTimerStart&&!dryHopTimerDone&&!S.ccMode);
+
+  // Velocity low (only when no dry hop or dry hop timer done)
+  const showVel=S.velLowSince&&!S.ccMode&&velElapsed<CC_TRIGGER_H&&(!S.batch?.dryHop||dryHopTimerDone);
+  show('velBanner', showVel);
+
+  // Cold crash ready
+  const ccReady=((!S.batch?.dryHop&&ccTrigger)||(S.batch?.dryHop&&dryHopTimerDone))&&!S.ccMode;
+  show('ccReadyBanner', ccReady);
+
+  // Cold crash active
+  show('ccActiveBanner', S.ccMode&&!transferReady);
+  if(S.ccMode){
+    document.getElementById('ccActiveSub').textContent=S.ccTimerStarted?'Temp under 3°C · Timer kjører':'Venter på temp under 3°C...';
+    document.getElementById('ccWaitingTxt').textContent=(!S.ccTimerStarted&&S.lastTemp!==null)?'Nåværende temp: '+S.lastTemp.toFixed(1)+'°C':'';
+  }
+
+  // Transfer ready
+  show('transferBanner', transferReady);
+}
+
+// ── CHECKLIST ─────────────────────────────────────────────
+function updateChecklist(){
+  const hasDryHop=S.batch&&S.batch.dryHop;
+  const dryHopTimerDone=S.dryHopTimerStart&&(Date.now()-S.dryHopTimerStart)/3600000>=DRYHOP_H;
+  const velElapsed=S.velLowSince?(Date.now()-S.velLowSince)/3600000:0;
+  const ccReady=(!hasDryHop&&velElapsed>=CC_TRIGGER_H)||(hasDryHop&&dryHopTimerDone);
+  const ccElapsed=S.ccTimerStarted?Date.now()-S.ccTimerStarted:0;
+  const transferReady=S.ccMode&&S.ccTimerStarted&&ccElapsed/3600000>=TRANSFER_H;
+
+  const steps=[
+    {id:0, done:!!S.batch,             icon:'🟡', txt:'Gjæring\nstartet'},
+    {id:1, done:S.diacetylActive,      icon:'🟠', txt:'Diacetyl\nrest'},
+    {id:2, done:S.dryHopAdded,         icon:'🟡', txt:'Tørrhumle\ntilsatt', hidden:!hasDryHop},
+    {id:3, done:ccReady||S.ccMode,     icon:'🟡', txt:'Gjæring\nferdig'},
+    {id:4, done:S.ccMode,              icon:'🔵', txt:'Cold crash\nstartet'},
+    {id:5, done:transferReady,         icon:'🟢', txt:'Klar for\noverføring'},
+  ];
+
+  steps.forEach(s=>{
+    const iconEl=document.getElementById('chk'+s.id);
+    const txtEl=document.getElementById('chkTxt'+s.id);
+    const stepEl=iconEl.closest('.check-step');
+    if(s.hidden){ stepEl.style.display='none'; const div=stepEl.nextElementSibling; if(div&&div.classList.contains('check-divider')) div.style.display='none'; return; }
+    stepEl.style.display='flex';
+    iconEl.textContent=s.done?s.icon:'⬜';
+    txtEl.className='check-txt'+(s.done?' done':'');
+    txtEl.textContent=s.txt.replace('\\n','\n');
+  });
+}
+
+// ── BATCH BAR ─────────────────────────────────────────────
+function updateBatchBar(){
+  const bar=document.getElementById('batchBar');
+  if(!S.batch){ bar.style.display='none'; return; }
+  bar.style.display='flex';
+  document.getElementById('batchNameDisp').textContent=S.batch.name||'–';
+  document.getElementById('batchOGDisp').textContent=S.batch.og?parseFloat(S.batch.og).toFixed(3):'–';
+  document.getElementById('batchFGDisp').textContent=S.batch.targetFg?parseFloat(S.batch.targetFg).toFixed(3):'–';
+  document.getElementById('batchABVDisp').textContent=S.batch.targetAbv?parseFloat(S.batch.targetAbv).toFixed(1)+'%':'–';
+  document.getElementById('batchTempDisp').textContent=S.batch.fermentTemp?S.batch.fermentTemp+'°C':'–';
+  document.getElementById('batchPSIDisp').textContent=S.batch.psi?S.batch.psi+' PSI':'–';
+  const d=new Date(S.batch.startTime);
+  document.getElementById('batchDateDisp').textContent='Startet '+d.toLocaleDateString('no-NO',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── COLD CRASH ────────────────────────────────────────────
+function startColdCrash(){
+  S.ccMode=true; S.ccStarted=Date.now(); S.ccTimerStarted=null;
+  if(S.lastTemp!==null&&S.lastTemp<CC_TEMP_THRESH) S.ccTimerStarted=Date.now();
+  S.diacetylActive=false;
+  saveState(); updateBanners(); updateChecklist();
+  showToast('Cold crash startet! Temp settes til 2°C.');
+}
+
+// ── DRY HOP ───────────────────────────────────────────────
+function confirmDryHop(){
+  document.getElementById('dryHopConfirmModal').classList.add('show');
+}
+
+function closeDryHopConfirm(){
+  document.getElementById('dryHopConfirmModal').classList.remove('show');
+}
+
+function dryHopAdded(){
+  closeDryHopConfirm();
+  S.dryHopAdded=true;
+  S.dryHopAddedTime=Date.now();
+  S.pauseUntil=Date.now()+(PAUSE_MIN*60*1000);
+  S.dryHopTimerStart=null; // starts after pause
+  saveState();
+  // Start dry hop timer after pause
+  setTimeout(()=>{
+    S.dryHopTimerStart=Date.now();
+    saveState();
+    showToast('72-timers timer startet!');
+  }, PAUSE_MIN*60*1000);
+  updateBanners(); updateChecklist();
+  showToast('Tørrhumle bekreftet – målinger pauset i 30 min');
+}
+
+// ── OG ────────────────────────────────────────────────────
+// OG is set at batch start only
+
+// ── BATCH MODAL ───────────────────────────────────────────
+function openNewBatch(){ document.getElementById('confirmOverlay').classList.add('show'); }
+function closeConfirm(){ document.getElementById('confirmOverlay').classList.remove('show'); }
+
+function doNewBatch(){
+  closeConfirm();
+  // Save to history
+  if(S.batch){
+    const hist=JSON.parse(localStorage.getItem('bc5_history')||'[]');
+    const normSG=v=>{ const n=parseFloat(v||0); return n>100?n/1000:n; };
+    const sg=S.history.length?normSG(S.history[S.history.length-1].gravity||S.history[S.history.length-1].specificGravity):null;
+    const abv=S.batch.og&&sg?(parseFloat(S.batch.og)-sg)*131.25:null;
+    hist.unshift({...S.batch,endTime:Date.now(),finalSG:sg,actualAbv:abv,durationH:S.batch.startTime?Math.floor((Date.now()-S.batch.startTime)/3600000):null});
+    if(hist.length>20) hist.splice(20);
+    localStorage.setItem('bc5_history',JSON.stringify(hist));
+  }
+  // Reset
+  S.og=null; S.batch=null; S.diacetylActive=false;
+  S.dryHopVelSince=null; S.dryHopReady=false; S.dryHopAdded=false; S.dryHopAddedTime=null;
+  S.pauseUntil=null; S.dryHopTimerStart=null;
+  S.velLowSince=null; S.ccMode=false; S.ccStarted=null; S.ccTimerStarted=null;
+  S.currentPSI=null;
+  localStorage.removeItem('bc5_og'); localStorage.removeItem('bc5_batch'); localStorage.removeItem('bc5_state');
+  // Reset UI
+  document.getElementById('abvBig').innerHTML='–<span>%</span>';
+  document.getElementById('abvMini').textContent='–';
+  document.getElementById('abvBar').style.width='0%';
+  updateBatchBar(); updateChecklist(); updatePressureCard();
+  // Open batch setup
+  document.getElementById('bIn_name').value='';
+  document.getElementById('bIn_og').value='';
+  document.getElementById('bIn_fg').value='';
+  document.getElementById('bIn_abv').value='';
+  document.getElementById('bIn_fermentTemp').value='';
+  document.getElementById('bIn_psi').value='';
+  document.getElementById('bIn_dryhop').checked=false;
+  document.getElementById('bIn_tempctrl').checked=false;
+  document.getElementById('bIn_pressure').checked=false;
+  document.getElementById('batchModal').classList.add('show');
+  fetchRAPT();
+}
+
+function closeBatchModal(){ document.getElementById('batchModal').classList.remove('show'); }
+
+function confirmStartBatch(){
+  const name=document.getElementById('bIn_name').value.trim()||'Batch';
+  let og=parseFloat(document.getElementById('bIn_og').value);
+  let fg=parseFloat(document.getElementById('bIn_fg').value);
+  const abv=parseFloat(document.getElementById('bIn_abv').value);
+  const fermentTemp=parseFloat(document.getElementById('bIn_fermentTemp').value);
+  const psi=parseFloat(document.getElementById('bIn_psi').value);
+  const dryHop=document.getElementById('bIn_dryhop').checked;
+  const tempCtrl=document.getElementById('bIn_tempctrl').checked;
+  const pressure=document.getElementById('bIn_pressure').checked;
+  if(og>100) og=og/1000;
+  if(fg>100) fg=fg/1000;
+  if(isNaN(og)){ showToast('Skriv inn OG'); return; }
+  S.batch={ name, og, targetFg:isNaN(fg)?null:fg, targetAbv:isNaN(abv)?null:abv,
+    fermentTemp:isNaN(fermentTemp)?null:fermentTemp,
+    psi:isNaN(psi)?null:psi, dryHop, tempCtrl, pressure, startTime:Date.now() };
+  S.og=og;
+  localStorage.setItem('bc5_og',og);
+  localStorage.setItem('bc5_batch',JSON.stringify(S.batch));
+  closeBatchModal();
+  updateBatchBar(); updateChecklist(); updatePressureCard();
+  updateDash();
+  showToast('Batch startet: '+name+' 🍺');
+}
+
+// ── HISTORY ───────────────────────────────────────────────
+function showHistory(){
+  const hist=JSON.parse(localStorage.getItem('bc5_history')||'[]');
+  const list=document.getElementById('historyList');
+  if(!hist.length){ list.innerHTML='<div class="hist-empty">Ingen tidligere batches ennå.</div>'; }
+  else {
+    list.innerHTML=hist.map(b=>{
+      const dateStr=new Date(b.startTime).toLocaleDateString('no-NO',{day:'2-digit',month:'2-digit',year:'numeric'});
+      return `<div class="hist-item">
+        <div class="hist-name">${b.name||'Ukjent'}</div>
+        <div class="hist-meta">
+          <div class="hist-kv">Dato: <span>${dateStr}</span></div>
+          <div class="hist-kv">OG: <span>${b.og?parseFloat(b.og).toFixed(3):'-'}</span></div>
+          <div class="hist-kv">FG: <span>${b.finalSG?b.finalSG.toFixed(3):'-'}</span></div>
+          <div class="hist-kv">ABV: <span>${b.actualAbv?b.actualAbv.toFixed(1)+'%':'-'}</span></div>
+          <div class="hist-kv">Dager: <span>${b.durationH?Math.round(b.durationH/24)+'d':'-'}</span></div>
+          ${b.dryHop?'<div class="hist-kv">Tørrhumle: <span>✓</span></div>':''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('historyModal').classList.add('show');
+}
+function closeHistory(){ document.getElementById('historyModal').classList.remove('show'); }
+
+// ── CHART ─────────────────────────────────────────────────
+function drawChart(){
+  const canvas=document.getElementById('chart');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.parentElement.clientWidth-44, H=220;
+  canvas.width=W; canvas.height=H;
+  const sorted=S.history;
+  if(sorted.length<2){ ctx.fillStyle='#5a6b56'; ctx.font='12px Fira Code'; ctx.textAlign='center'; ctx.fillText('Ikke nok data ennå',W/2,H/2); return; }
+  const pad={l:56,r:48,t:10,b:30};
+  const cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+  const normSG=v=>{ const n=parseFloat(v||0); return n>100?n/1000:n; };
+  const sgs=sorted.map(d=>normSG(d.gravity||d.specificGravity));
+  const temps=sorted.map(d=>parseFloat(d.temperature||d.temperatureCelsius||0));
+  const times=sorted.map(d=>new Date(d.timestamp||d.createdOn).getTime());
+  const sgMin=Math.min(...sgs)-.002, sgMax=Math.max(...sgs)+.002;
+  const tMin=Math.min(...temps)-1.5, tMax=Math.max(...temps)+1.5;
+  const sgR=sgMax-sgMin||.01, tR=tMax-tMin||1;
+  const t0=times[0], tSpan=(times[times.length-1]-t0)||1;
+  const xP=i=>pad.l+(times[i]-t0)/tSpan*cW;
+  const sgY=v=>pad.t+cH-(v-sgMin)/sgR*cH;
+  const tY=v=>pad.t+cH-(v-tMin)/tR*cH;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#252b24'; ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){ const y=pad.t+cH/4*i; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke(); }
+  ctx.fillStyle='#c8922a'; ctx.font='10px Fira Code'; ctx.textAlign='right';
+  for(let i=0;i<=3;i++) ctx.fillText((sgMax-sgR/3*i).toFixed(3),pad.l-5,pad.t+cH/3*i+4);
+  ctx.fillStyle='#4a9edd'; ctx.textAlign='left';
+  for(let i=0;i<=3;i++) ctx.fillText((tMax-tR/3*i).toFixed(0)+'°',W-pad.r+5,pad.t+cH/3*i+4);
+  ctx.fillStyle='#5a6b56'; ctx.textAlign='center';
+  const lc=Math.min(5,sorted.length);
+  for(let i=0;i<lc;i++){
+    const idx=Math.floor((sorted.length-1)/(lc-1)*i);
+    ctx.fillText(new Date(times[idx]).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}),xP(idx),H-6);
+  }
+  ctx.beginPath(); ctx.strokeStyle='#4a9edd88'; ctx.lineWidth=2; ctx.setLineDash([4,4]);
+  sorted.forEach((d,i)=>i===0?ctx.moveTo(xP(i),tY(temps[i])):ctx.lineTo(xP(i),tY(temps[i])));
+  ctx.stroke(); ctx.setLineDash([]);
+  const grad=ctx.createLinearGradient(0,pad.t,0,pad.t+cH);
+  grad.addColorStop(0,'#c8922a32'); grad.addColorStop(1,'#c8922a04');
+  ctx.beginPath();
+  sorted.forEach((d,i)=>i===0?ctx.moveTo(xP(i),sgY(sgs[i])):ctx.lineTo(xP(i),sgY(sgs[i])));
+  ctx.lineTo(xP(sorted.length-1),pad.t+cH); ctx.lineTo(xP(0),pad.t+cH);
+  ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath(); ctx.strokeStyle='#c8922a'; ctx.lineWidth=2.5;
+  sorted.forEach((d,i)=>i===0?ctx.moveTo(xP(i),sgY(sgs[i])):ctx.lineTo(xP(i),sgY(sgs[i])));
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(xP(sorted.length-1),sgY(sgs[sgs.length-1]),5,0,Math.PI*2); ctx.fillStyle='#c8922a'; ctx.fill();
+}
+
+// ── TIMERS ────────────────────────────────────────────────
+function fmtHMS(ms){ const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'); }
+function fmtCountdown(ms){ const s=Math.max(0,Math.floor(ms/1000)),m=Math.floor(s/60),sec=s%60; return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'); }
+function fmtBatchAge(ms){ const h=Math.floor(ms/3600000),d=Math.floor(h/24); return d+'d '+(h%24)+'t'; }
+
+function startTimers(){
+  Object.values(S.timers).forEach(clearInterval);
+  S.countdown=INTERVAL/1000;
+  S.timers.update=setInterval(async()=>{ S.countdown=INTERVAL/1000; await fetchRAPT(); },INTERVAL);
+  S.timers.token=setInterval(()=>refreshToken(),TOK_TTL);
+  S.timers.cnt=setInterval(()=>{
+    S.countdown=Math.max(0,S.countdown-1);
+    const m=Math.floor(S.countdown/60),s=S.countdown%60;
+    document.getElementById('cntTxt').textContent='Neste: '+m+':'+String(s).padStart(2,'0');
+    document.getElementById('ringProg').style.strokeDashoffset=CIRC-(1-S.countdown/(INTERVAL/1000))*CIRC;
+    if(S.countdown===0) S.countdown=INTERVAL/1000;
+  },1000);
+  S.timers.banners=setInterval(()=>{
+    // Velocity timer
+    if(S.velLowSince&&!S.ccMode) document.getElementById('velTimerTxt').textContent=fmtHMS(Date.now()-S.velLowSince);
+    // CC timer
+    if(S.ccMode&&S.ccTimerStarted) document.getElementById('ccTimerTxt').textContent=fmtHMS(Date.now()-S.ccTimerStarted);
+    else if(S.ccMode) document.getElementById('ccTimerTxt').textContent='Venter...';
+    // Batch timer
+    if(S.batch&&S.batch.startTime) document.getElementById('batchTimerDisp').textContent=fmtBatchAge(Date.now()-S.batch.startTime);
+    // Pause timer
+    if(S.pauseUntil&&Date.now()<S.pauseUntil){
+      document.getElementById('pauseTimerTxt').textContent=fmtCountdown(S.pauseUntil-Date.now());
+    } else if(S.pauseUntil&&Date.now()>=S.pauseUntil&&!S.dryHopTimerStart){
+      // Pause done, start dry hop timer
+      S.dryHopTimerStart=Date.now(); S.pauseUntil=null; saveState();
+      showToast('Pause ferdig – 72t timer startet!');
+      updateBanners();
+    }
+    // Dry hop countdown
+    if(S.dryHopTimerStart&&!S.ccMode){
+      const remaining=(DRYHOP_H*3600000)-(Date.now()-S.dryHopTimerStart);
+      if(remaining>0) document.getElementById('dryHopTimerTxt').textContent=fmtHMS(remaining);
+      else { updateBanners(); updateChecklist(); }
+    }
+    updateBanners(); updateChecklist();
+  },1000);
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function setStatus(t,txt){ document.getElementById('statusDot').className='dot '+t; document.getElementById('statusTxt').textContent=txt; }
+function showErr(el,msg){ el.textContent=msg; el.style.display='block'; }
+function setBtnLoading(b){ const btn=document.getElementById('loginBtn'); btn.disabled=b; btn.textContent=b?'CONNECTING...':'CONNECT'; }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
+</script>
+</body>
+</html>
