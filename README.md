@@ -1,136 +1,143 @@
-🍺 Brew Control
-A homebrewing dashboard built for the RAPT Pill hydrometer, designed to run full-screen on a dedicated iPad or tablet. Brew Control gives you a real-time view of your fermentation, automates key decisions, and guides you through the entire brewing process from pitch to transfer.
+# 🍺 Brew Control
 
-Features
-Live RAPT Pill Data
-Brew Control connects directly to the RAPT API and fetches your hydrometer data every 10 minutes. The dashboard displays:
+A premium homebrewing fermentation dashboard built for the **RAPT ecosystem**. Designed to run full-screen on a dedicated iPad, Brew Control connects directly to the RAPT API and guides you through the entire fermentation process — from pitching yeast to transferring to keg — with automatic temperature control, smart process automation, and a clean premium interface.
 
-Gravity (SG) – current specific gravity with trend (rising/falling/stable)
-Temperature – current fermenter temperature
-Alcohol (ABV) – estimated alcohol by volume, calculated from your OG and current SG
-Velocity – gravity points per day, showing how fast fermentation is progressing
+---
 
-The velocity card changes color automatically:
+## What It Does
 
-🟢 Green – active fermentation (velocity above 0.1)
-🟡 Yellow – fermentation slowing (velocity below 0.1)
-🔴 Red blinking – fermentation complete / cold crash mode
+Brew Control is a single HTML file you host on GitHub Pages. It connects to your RAPT account via API and gives you a real-time fermentation dashboard without needing any apps, servers, or subscriptions beyond your existing RAPT setup.
 
-Batch Management
-When you start a new batch, you fill in information from your fresh wort kit sheet:
+### Live Data
+Every 60 seconds the dashboard fetches fresh data from your RAPT Pill hydrometer:
+- Specific gravity (SG) with trend
+- Fermentation temperature (from inside the liquid)
+- Gravity velocity (how fast fermentation is progressing)
+- Battery level — only shown as a warning if below 20%
 
-Batch name
-Original Gravity (OG)
-Target Final Gravity (FG)
-Expected ABV %
-Fermentation pressure in PSI (optional)
+If no data has been received for 60 minutes, a warning strip appears at the top of the screen.
 
-A batch info bar is displayed at the top of the dashboard showing the batch name, all key values, and a live timer counting up from when the batch was started.
-Brewing Calculator
-Enter your OG and the dashboard automatically calculates:
+### Fermentation Progress
+A dedicated card shows estimated fermentation progress using the formula:
 
-Current estimated ABV
-Target FG vs current FG
-Maximum possible ABV
-A progress bar showing how far along fermentation is
+```
+(OG − Current SG) / (OG − Expected FG) × 100
+```
 
-Automated Process Flow
-Brew Control guides you through the full fermentation process with automatic triggers and timers:
-1. Diacetyl Rest
-When your SG gets within 4 gravity points of your target FG, Brew Control detects this and raises an alert. If you have a RAPT Temperature Controller connected, the temperature is raised to 3°C automatically to allow the yeast to clean up any diacetyl before fermentation finishes.
-2. Dry Hopping (optional)
-If you choose dry hopping when setting up your batch, Brew Control will alert you when velocity drops below 0.1, and stays below for more then 12hours. (fermentation essentially complete). A banner prompts you to add dry hops. After you confirm:
+This gives you a percentage of how far along fermentation is, along with a progress bar, current SG, expected FG, starting OG, and how much SG remains until the target. A circular progress indicator in the metric grid mirrors the same value with a live-filling arc and a label that updates automatically: **Active fermentation → Halfway → Almost done → Fermentation complete**.
 
-Measurements are paused for 30 minutes to avoid false readings from opening the fermenter
-A 72-hour countdown timer starts
-After 72 hours, cold crash begins automatically
+### Temperature Controller
+When a RAPT Temperature Controller is connected, the dashboard automatically detects it at login — no manual configuration needed. It displays the actual cabinet temperature and the current setpoint, and allows manual temperature adjustment via a **Juster** button directly on the temperature card.
 
-3. Cold Crash
-If you are not dry hopping, cold crash triggers after velocity has been below 0.1 for 48 hours. If the RAPT Temperature Controller is connected, the temperature is lowered to 2°C automatically.
-A large banner appears when it is time to start cold crash, with a button to confirm. Once started, a timer counts up to show how long the cold crash has been running.
-4. Transfer to Keg
-After 48 hours of cold crash, a green banner appears:
+**Command Queue with verification** — every temperature command goes through a verified 3-step process:
+1. Send the command to the controller
+2. Wait 5 seconds
+3. Read the controller back — is the setpoint confirmed?
 
-🚰 READY FOR TRANSFER TO KEG
+- Confirmed → toast notification shown: *"Controller bekreftet 20°C ✓"*
+- Not confirmed → retry up to 3 times
+- All 3 attempts fail → warning: *"⚠ Temperaturkommando mislyktes"*
 
-This is your signal that the beer is clear and ready for kegging.
-Checklist
-A small always-visible checklist at the top of the dashboard shows your progress through the brew:
-StepTrigger⬜ → 🟡 Fermentation startedWhen you start a new batch⬜ → 🟠 Diacetyl restAutomatic – SG within 4 points of target FG⬜ → 🟡 Dry hops addedWhen you confirm dry hop addition⬜ → 🟡 Fermentation completeAutomatic – velocity low for required time⬜ → 🔵 Cold crash startedWhen you press Start Cold Crash⬜ → 🟢 Ready for transferAutomatic – after 48 hours of cold crash
-RAPT Temperature Controller (optional)
-When enabled for a batch, the temperature card shows heating and cooling status in color:
+All commands and confirmations are logged with timestamps, visible in Advanced mode.
 
-🔴 Warm red – heating up
-🔵 Cool blue – cooling down
-White – at target temperature
+### Batch Types
 
-Brew Control will command the controller to automatically adjust temperature at key stages.
-Fermentation Pressure (optional)
-If you ferment under pressure (e.g. with a FermZilla), you can set your target pressure in PSI when starting a batch. The pressure is displayed as a fifth metric card. A blinking red alarm triggers if pressure drops below 5 PSI – active only after the first 48 hours to avoid false alarms at the start of fermentation.
-Batch History
-Previous batches are saved locally and accessible via the History button. Each entry shows:
+**Beer (Øl)**
+- Automatic diacetyl rest: temperature raised (fermentation temp + 3°C) when SG approaches target FG
+- Dry hop alert: triggered when velocity has been below 0.1 for 12 consecutive hours
+- Cold crash: after FG stable for 24 hours, or manually after dry hopping
+- Transfer to keg: after 48 hours of cold crash
 
-Batch name and start date
-OG, final SG, and actual ABV achieved
-Total duration in days
-Whether dry hopping was used
+**Cider (Cider)**
+- Flavoring alert: triggered when FG stable for 48 hours and SG is below 1.006
+- 48-hour countdown after flavoring confirmed, then automatic cold crash
+- Transfer to keg: after 48 hours of cold crash
 
-New Batch
-The New Batch button resets all timers, OG, and batch data. Before resetting, the current batch is automatically saved to history.
+Both types ignore velocity and FG alerts during the first 48 hours after batch start.
 
-Setup
-Requirements
+### Automated Temperature Control
+When a RAPT Temperature Controller is enabled:
+- **Batch start** → sets controller to your chosen fermentation temperature
+- **Diacetyl rest** → raises temperature automatically (fermentation temp + 3°C)
+- **Cold crash** → lowers temperature to 2°C automatically
+- **Manual override** → set any temperature at any time; badge shown when active; **↩ Auto** button returns to automatic control
 
-A RAPT Pill hydrometer connected to your WiFi
-A RAPT account at rapt.io
-An API Secret key created under My Account → Api Secrets on rapt.io
+### Safety
+- Hard limit of **35 PSI** — any pressure command above this is silently blocked
+- All temperature commands are verified by reading the controller back after 5 seconds
+- Manual override is always available regardless of automation phase
 
-Running the Dashboard
-The dashboard is a single HTML file. To use it:
+### Process Checklist
+A sidebar on the right side of the dashboard tracks progress through the brew. Steps irrelevant to your batch type (e.g. dry hop when not chosen) are hidden automatically.
 
-Host the file on a web server. The easiest free option is GitHub Pages:
+| Step | Trigger |
+|------|---------|
+| ✅ Fermentation started | When batch is created |
+| ✅ Diacetyl rest | Automatic — SG near target FG |
+| ✅ Dry hops added | When you confirm |
+| ✅ Fermentation complete | Automatic — FG stable |
+| ✅ Cold crash started | When you press Start Cold Crash |
+| ✅ Ready for transfer | Automatic — after 48h cold crash |
 
-Create a free GitHub account
-Create a new public repository
-Upload the file as index.html
-Go to Settings → Pages → select main branch → Save
-Your dashboard will be available at https://yourusername.github.io/repositoryname
+### Simple and Advanced Mode
+**Simple mode** — clean and minimal: temperature, SG, fermentation progress, controller status, active banners.
 
+**Advanced mode** — adds: 24-hour SG and temperature chart, full command log with timestamps.
 
-Open the URL in Safari on your iPad
-Tap the Share button → Add to Home Screen for a full-screen app experience
-Log in with your RAPT email and API Secret
+### Batch History
+When you start a new batch, the previous batch is automatically saved to history, showing batch name, type, start date, OG, final SG, actual ABV achieved, and total duration.
 
-All login data, batch information, and timers are stored locally in your browser only. Nothing is sent anywhere except directly to the RAPT API.
+---
 
-Note: Always open the dashboard from the Home Screen icon, not from Safari directly. The two use separate local storage, so data saved in one will not appear in the other.
+## Setup
 
+### What You Need
+- A [RAPT Pill hydrometer](https://www.kegland.com.au) registered to your RAPT account
+- A RAPT account at [rapt.io](https://rapt.io)
+- An **API Secret** — create one under **My Account → Api Secrets** on rapt.io
 
-Compatible Hardware
-DeviceStatusNotesRAPT Pill Hydrometer✅ Full supportGravity, temperature, velocity, batteryRAPT Temperature Controller✅ SupportedAuto temperature control at key stagesRAPT Digital Regulator & Spunding Valve✅ SupportedPressure display and auto-regulationInkbird ITC-308 WiFi⚠️ Not supportedClosed API, no reliable integration possible
+### Hosting on GitHub Pages (free)
+1. Create a free account at [github.com](https://github.com)
+2. Create a new **public** repository
+3. Upload the file renamed as `index.html`
+4. Go to **Settings → Pages → Branch: main → Save**
+5. Dashboard is live at `https://yourusername.github.io/repositoryname`
 
-Process Summary
-Pitch yeast → Fermentation starts
-       ↓
-SG within 4 points of target FG → Diacetyl rest (temp raised to 3°C)
-       ↓
-Velocity drops below 0.1
-       ↓
-  [Dry hop?]
-  YES → Dry hop alert → Add hops → 30 min pause → 72 hour timer → Cold crash
-  NO  → Wait 48 hours → Cold crash
-       ↓
-Cold crash (temp lowered to 2°C) → 48 hour timer
-       ↓
-Ready for transfer to keg 🚰🍺
+### Using on iPad (full screen)
+1. Open the URL in **Safari** on your iPad
+2. Tap the Share button → **Add to Home Screen**
+3. Open from the home screen icon for full-screen mode
 
-Technical Notes
+> Always open from the home screen icon, not from Safari directly. The two use separate local storage.
 
-Data is fetched from the RAPT API every 10 minutes via corsproxy.io to handle browser CORS restrictions
-The RAPT authentication token is automatically refreshed every 50 minutes
-All state (timers, batch info, history) is stored in browser localStorage
-The dashboard is a single self-contained HTML file with no external dependencies beyond Google Fonts and the CORS proxy
+---
 
+## Compatible Hardware
 
-Acknowledgements
-Built for homebrewers who ferment under pressure using the KegLand / RAPT ecosystem. Inspired by the lack of a single dashboard that combines gravity, temperature, pressure, and process automation in one place.
+| Device | Support |
+|--------|---------|
+| RAPT Pill Hydrometer | ✅ Full — gravity, temperature, velocity, battery |
+| RAPT Temperature Controller | ✅ Full — read, set, verify, command log |
+| RAPT Digital Regulator & Spunding Valve | 🔜 Ready to integrate when available |
+
+---
+
+## Privacy
+
+All login data, batch information, timers and history are stored locally in your browser — nothing is sent to any server other than the RAPT API directly. Since the GitHub repository is public, anyone with the URL can open the dashboard, but they would need your RAPT email and API Secret to log in.
+
+---
+
+## Technical Notes
+
+- Single self-contained HTML file — no build tools, no dependencies, no server required
+- Polls RAPT API every **60 seconds**
+- Authentication token refreshed every 50 minutes
+- All state persisted in browser localStorage
+- Command queue retries temperature commands up to 3 times with 5-second verification
+- Handles both 1.047 and 1047 gravity formats from RAPT API
+- 48-hour warmup period prevents false alerts after pitching
+
+---
+
+*Built for homebrewers using the KegLand / RAPT ecosystem.*
